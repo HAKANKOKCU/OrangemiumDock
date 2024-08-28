@@ -1,0 +1,79 @@
+﻿<Window x:Class="OrangemiumDock.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:OrangemiumDock"
+        mc:Ignorable="d"
+        Title="Settings" Height="450" Width="800" WindowStartupLocation="CenterScreen">
+    <ScrollViewer>
+        <StackPanel Name="settingsList">
+            <StackPanel Orientation="Horizontal" Background="{x:Static SystemParameters.WindowGlassBrush}" Name="title">
+                <Label Foreground="White" FontSize="24">OrangemiumDock Settings</Label>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Icon Size</Label>
+                <TextBox VerticalAlignment="Center" Name="iconSizeTB" Style="{StaticResource OTBox}"></TextBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Animation Speed</Label>
+                <TextBox VerticalAlignment="Center" Name="anisTB" Style="{StaticResource OTBox}"></TextBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Dock Color</Label>
+                <TextBox VerticalAlignment="Center" Name="dockcolorTB" Style="{StaticResource OTBox}"></TextBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Dock Border Radius</Label>
+                <TextBox VerticalAlignment="Center" Name="dockradiusTB" Style="{StaticResource OTBox}"></TextBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Separator Color</Label>
+                <TextBox VerticalAlignment="Center" Name="sepcolorTB" Style="{StaticResource OTBox}"></TextBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Active App Color</Label>
+                <TextBox VerticalAlignment="Center" Name="actcolorTB" Style="{StaticResource OTBox}"></TextBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Dock Position</Label>
+                <ComboBox Name="dockpos">
+                    <ComboBoxItem Content="Bottom" Style="{StaticResource OCIT}"></ComboBoxItem>
+                    <ComboBoxItem Content="Top" Style="{StaticResource OCIT}"></ComboBoxItem>
+                    <ComboBoxItem Content="Right" Style="{StaticResource OCIT}"></ComboBoxItem>
+                    <ComboBoxItem Content="Left" Style="{StaticResource OCIT}"></ComboBoxItem>
+                </ComboBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Group Running Apps</Label>
+                <ComboBox Name="ruapps">
+                    <ComboBoxItem Content="Group as Executables" Style="{StaticResource OCIT}"></ComboBoxItem>
+                    <ComboBoxItem Content="Group as Instances" Style="{StaticResource OCIT}"></ComboBoxItem>
+                    <ComboBoxItem Content="Don't Group" Style="{StaticResource OCIT}"></ComboBoxItem>
+                </ComboBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Auto Hide</Label>
+                <ComboBox Name="auhid">
+                    <ComboBoxItem Content="Smart" Style="{StaticResource OCIT}"></ComboBoxItem>
+                    <ComboBoxItem Content="On (Buggier than Smart)" Style="{StaticResource OCIT}"></ComboBoxItem>
+                    <ComboBoxItem Content="Off" Style="{StaticResource OCIT}"></ComboBoxItem>
+                </ComboBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Ticker Interval (Requires restart)</Label>
+                <TextBox VerticalAlignment="Center" Name="tickinvTB" Style="{StaticResource OTBox}"></TextBox>
+                <Label VerticalAlignment="Center">(DON'T TOUCH IF YOU DON'T KNOW WHAT YOU ARE DOING!!)</Label>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Dock Transform Y</Label>
+                <TextBox VerticalAlignment="Center" Name="dtyTB" Style="{StaticResource OTBox}"></TextBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Dock Transform X</Label>
+                <TextBox VerticalAlignment="Center" Name="dtxTB" Style="{StaticResource OTBox}"></TextBox>
+            </StackPanel>
+            <CheckBox Name="topmostCB">Top Most</CheckBox>
+        </StackPanel>
+    </ScrollViewer>
+</Window>
