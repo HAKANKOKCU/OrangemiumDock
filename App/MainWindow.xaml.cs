@@ -799,20 +799,22 @@ public partial class MainWindow : Window
                         }catch {createicon();}
                         
                     }
-                    var l = appics[window.Key];
-                    WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
-                    GetWindowPlacement(fgw, ref placement);
-                    foreach (object x in l) {
-                        if (x is dockButton) {
-                            var btn = (dockButton)x;
-                            btn.updatedata(window.Value, (btn.hwnds.Contains(fgw) && placement.showCmd != 2));
-                            var ico = GetAppIcon(window.Key);
-                            if (ico != null) btn.updateicon(ico);
-                        }else if (x is dockInnerButton) {
-                            var btn = (dockInnerButton)x;
-                            btn.updatedata(window.Value, (fgw == window.Key && placement.showCmd != 2));
-                            var ico = GetAppIcon(window.Key);
-                            if (ico != null) btn.updateicon(ico);
+                    if (appics.ContainsKey(window.Key)) {
+                        var l = appics[window.Key];
+                        WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
+                        GetWindowPlacement(fgw, ref placement);
+                        foreach (object x in l) {
+                            if (x is dockButton) {
+                                var btn = (dockButton)x;
+                                btn.updatedata(window.Value, (btn.hwnds.Contains(fgw) && placement.showCmd != 2));
+                                var ico = GetAppIcon(window.Key);
+                                if (ico != null) btn.updateicon(ico);
+                            }else if (x is dockInnerButton) {
+                                var btn = (dockInnerButton)x;
+                                btn.updatedata(window.Value, (fgw == window.Key && placement.showCmd != 2));
+                                var ico = GetAppIcon(window.Key);
+                                if (ico != null) btn.updateicon(ico);
+                            }
                         }
                     }
                 }
@@ -879,6 +881,7 @@ public partial class MainWindow : Window
         public Button btn = new() {BorderThickness = new Thickness(0),Background = Brushes.Transparent, Width = iconsize,Height = iconsize};
         public Image ico = new() {Width = iconsize / 2, Height = iconsize / 2,Stretch = Stretch.Uniform};
         public StackPanel spinner = new();
+        public ScrollViewer spinnerscroll = new() {VerticalScrollBarVisibility = ScrollBarVisibility.Auto};
         public Popup spinnerpopup = new();
         bool activ = false;
         public List<HWND> hwnds = new();
@@ -900,12 +903,14 @@ public partial class MainWindow : Window
             ico.Source = imgs;
         }
         public dockButton(MainWindow w,HWND hd = 0) {
+            spinnerscroll.Content = spinner;
             Border spinnercont = new()
             {
                 Background = Brushes.White,
                 CornerRadius = new CornerRadius(8),
-                Child = spinner
+                Child = spinnerscroll
             };
+            
             spinnerpopup.Child = spinnercont;
             spinnerpopup.StaysOpen = false;
             spinnerpopup.Margin = new Thickness(iconsize);
