@@ -29,8 +29,8 @@ public partial class appsdrawerWindow : Window
     public appsdrawerWindow(MainWindow window)
     {
         InitializeComponent();
-        settings = window.settings;
-        if (window.settings.appsDrawerTheme == "Dark") {
+        settings = App.settings;
+        if (App.settings.appsDrawerTheme == "Dark") {
             Background = new SolidColorBrush(Color.FromArgb(120,0,0,0));
         }else {
             Background = new SolidColorBrush(Color.FromArgb(120,255,255,255));
@@ -40,21 +40,21 @@ public partial class appsdrawerWindow : Window
         }
         
         window.Content = new Grid();
-        if (window.settings.dockPosition == "Bottom") {
+        if (App.settings.dockPosition == "Bottom") {
             window.mtc.HorizontalAlignment = HorizontalAlignment.Center;
             window.mtc.VerticalAlignment = VerticalAlignment.Bottom;
-            wp.Margin = new Thickness(0,42,0,window.settings.iconSize);
+            wp.Margin = new Thickness(0,42,0,App.settings.iconSize);
             mdp.Children.Add(window.mtc);
-        }else if (window.settings.dockPosition == "Left") {
+        }else if (App.settings.dockPosition == "Left") {
             window.mtc.HorizontalAlignment = HorizontalAlignment.Left;
             window.mtc.VerticalAlignment = VerticalAlignment.Center;
-            wp.Margin = new Thickness(window.settings.iconSize,42,0,0);
+            wp.Margin = new Thickness(App.settings.iconSize,42,0,0);
             mdp.Children.Add(window.mtc);
-        }else if (window.settings.dockPosition == "Right") {
+        }else if (App.settings.dockPosition == "Right") {
             window.mtc.HorizontalAlignment = HorizontalAlignment.Right;
             window.mtc.VerticalAlignment = VerticalAlignment.Center;
             wp.Margin = new Thickness(0,42,0,0);
-            sw.Margin = new Thickness(0,0,window.settings.iconSize,0);
+            sw.Margin = new Thickness(0,0,App.settings.iconSize,0);
             mdp.Children.Add(window.mtc);
         }
         

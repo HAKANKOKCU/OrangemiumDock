@@ -14,6 +14,7 @@ namespace OrangemiumDock;
 /// </summary>
 public partial class App : Application
 {
+    public static App.settingsDataType settings;
      [DllImport("shell32.dll", CharSet = CharSet.Auto)]
     public static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, out SHFileInfo psfi, uint cbFileInfo, uint uFlags);
 
@@ -166,11 +167,22 @@ public partial class App : Application
         public bool automaticSeparatorAtRunningApps = true;
         public string dockButtonStyleToUse = "asbs";
         public string appsDrawerTheme = "Dark";
+        public string submenuCornerRadius = "8";
+        public string submenuButtonStyleToUse = "asbs";
+        public string submenuBackground = "#FFFFFF";
+        public string submenuForeground = "#000000";
     }
     public class iconDataType {
         public string name = "";
         public string target = "";
         public string icon = "";
+    }
+    public App() : base() {
+        Dispatcher.UnhandledException += crash;
+    }
+
+    void crash(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e) {
+        MessageBox.Show(e.Exception.ToString(), "Crash (CTRL + C to copy)", MessageBoxButton.OK, MessageBoxImage.Error);
     }
 }
 
