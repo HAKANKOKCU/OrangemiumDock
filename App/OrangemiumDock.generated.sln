@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrangemiumDock", "OrangemiumDock.csproj", "{DA391798-8339-427B-B1BB-348F4E54DFD3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrangemiumDock", "OrangemiumDock.csproj", "{7823C63B-E3F8-4382-B1C4-44512C1F65BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +11,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{DA391798-8339-427B-B1BB-348F4E54DFD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DA391798-8339-427B-B1BB-348F4E54DFD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DA391798-8339-427B-B1BB-348F4E54DFD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DA391798-8339-427B-B1BB-348F4E54DFD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7823C63B-E3F8-4382-B1C4-44512C1F65BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7823C63B-E3F8-4382-B1C4-44512C1F65BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7823C63B-E3F8-4382-B1C4-44512C1F65BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7823C63B-E3F8-4382-B1C4-44512C1F65BE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

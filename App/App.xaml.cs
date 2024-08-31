@@ -182,7 +182,7 @@ public partial class App : Application
     }
 
     void crash(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e) {
-        MessageBox.Show(e.Exception.ToString(), "Crash (CTRL + C to copy)", MessageBoxButton.OK, MessageBoxImage.Error);
+        e.Handled = MessageBox.Show(e.Exception.ToString(), "Error (CTRL + C to copy) | Click Yes to ignore", MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes;
     }
 }
 

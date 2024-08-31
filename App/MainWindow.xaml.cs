@@ -111,6 +111,15 @@ public partial class MainWindow : Window
 
         return windows;
   }
+    string getWindowTitle(HWND hWnd) {
+        int length = GetWindowTextLength(hWnd);
+        if (length == 0) return "";
+
+        StringBuilder builder = new StringBuilder(length);
+        GetWindowText(hWnd, builder, length + 1);
+
+        return builder.ToString();
+    }
 
   private delegate bool EnumWindowsProc(HWND hWnd, int lParam);
 
@@ -720,6 +729,7 @@ public partial class MainWindow : Window
     async void refreshtasklist() {
         if (App.settings.automaticSeparatorAtRunningApps && rapsep == null) rapsep = createseparator();
         IDictionary<HWND,string> windows = GetOpenWindows();
+        List<object> editedButtons = new();
         foreach(KeyValuePair<IntPtr, string> window in windows)
         {
             if (hwnd != window.Key) {
@@ -803,17 +813,36 @@ public partial class MainWindow : Window
                         WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
                         GetWindowPlacement(fgw, ref placement);
                         foreach (object x in l) {
-                            if (x is dockButton) {
+                            if (x is dockButton && !editedButtons.Contains(x)) {
                                 var btn = (dockButton)x;
-                                btn.updatedata(window.Value, (btn.hwnds.Contains(fgw) && placement.showCmd != 2));
-                                var ico = GetAppIcon(window.Key);
-                                if (ico != null) btn.updateicon(ico);
-                            }else if (x is dockInnerButton) {
+                                
+                                if (btn.hwnds.Contains(fgw) && windows.ContainsKey(fgw)) {
+                                    btn.updatedata(windows[fgw], (btn.hwnds.Contains(fgw) && placement.showCmd != 2));
+                                    try {
+                                        var mdl = prc.MainModule;
+                                        if (mdl != null) {
+                                            var ico = GetAppIcon(fgw) ?? App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined);
+                                            if (ico != null) btn.updateicon(ico);
+                                        }
+                                    }catch {}
+                                }else {
+                                    btn.updatedata(window.Value, (btn.hwnds.Contains(fgw) && placement.showCmd != 2));
+                                    try {
+                                        var mdl = prc.MainModule;
+                                        if (mdl != null) {
+                                            var ico = GetAppIcon(window.Key) ?? App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined);
+                                            if (ico != null) btn.updateicon(ico);
+                                        }
+                                    }catch {}
+                                }
+                                
+                            }else if (x is dockInnerButton && !editedButtons.Contains(x)) {
                                 var btn = (dockInnerButton)x;
                                 btn.updatedata(window.Value, (fgw == window.Key && placement.showCmd != 2));
                                 var ico = GetAppIcon(window.Key);
                                 if (ico != null) btn.updateicon(ico);
                             }
+                            editedButtons.Add(x);
                         }
                     }
                 }
