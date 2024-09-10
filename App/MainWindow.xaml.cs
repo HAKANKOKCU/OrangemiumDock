@@ -738,119 +738,122 @@ public partial class MainWindow : Window
                 Process prc = Process.GetProcessById((int)pid);
                 bool include = true;
                 bool processResponding = false;
-                try {
-                    var task = Task.Factory.StartNew(() => prc.Responding);
+                if (!wins.Contains(window.Key)) {
+                    try {
+                        var task = Task.Factory.StartNew(() => prc.Responding);
 
-                    processResponding = await task.WaitAsync(TimeSpan.FromSeconds(1)) && task.Result;
-                    if (processResponding) {
-                        if (pid == Process.GetCurrentProcess().Id) include = false;
-                        var module = prc.MainModule;
-                        if (module != null) {
-                            if (App.settings.iconBlacklist.Contains(module.FileName) || App.settings.iconBlacklist.Contains(Path.GetFileName(module.FileName))) {
-                                include = false;
+                        processResponding = await task.WaitAsync(TimeSpan.FromSeconds(1)) && task.Result;
+                        if (processResponding) {
+                            if (pid == Process.GetCurrentProcess().Id) include = false;
+                            var module = prc.MainModule;
+                            if (module != null) {
+                                if (App.settings.iconBlacklist.Contains(module.FileName) || App.settings.iconBlacklist.Contains(Path.GetFileName(module.FileName))) {
+                                    include = false;
+                                }
                             }
-                        }
-                    }
-                }catch {}
-                if (include) {
-                    if (!wins.Contains(window.Key)) {
+                        }else {include = false;}
+                    }catch {}
+                }else {include = false;}
+                if (include && !appics.ContainsKey(window.Key)) {
+                    
                         
-                        void createicon(string key = "", string path = "") {
-                            if (rapsep != null && rapsep.Parent != runningapps && App.settings.automaticSeparatorAtRunningApps) {
-                                runningapps.Children.Add(rapsep);
-                            }
-                            dockButton btn = new(this,window.Key);
-                            
-                            btn.ctx.Items.Add(new Separator());
-                            MenuItem miwins = new() {Header = "Windows..."};
-                            btn.ctx.Items.Add(miwins);
-                            miwins.Click += (e,a) => {
-                                btn.spinnerpopup.IsOpen = true;
+                    void createicon(string key = "", string path = "") {
+                        if (rapsep != null && rapsep.Parent != runningapps && App.settings.automaticSeparatorAtRunningApps) {
+                            runningapps.Children.Add(rapsep);
+                        }
+                        dockButton btn = new(this,window.Key);
+                        
+                        btn.ctx.Items.Add(new Separator());
+                        MenuItem miwins = new() {Header = "Windows..."};
+                        btn.ctx.Items.Add(miwins);
+                        miwins.Click += (e,a) => {
+                            btn.spinnerpopup.IsOpen = true;
+                        };
+                        runningapps.Children.Add(btn.btn);
+                        wins.Add(window.Key);
+                        
+                        if (key != "") {
+                            btn.key = key;
+                            groupexeicon[key] = btn;
+                            dockInnerButton insbtn = new(btn);
+                            insbtn.updatedata("New Instance...",false);
+                            btn.spinner.Children.Add(insbtn.btn);
+                            insbtn.btn.Click += (e,a) => {
+                                Process.Start(path);
                             };
-                            runningapps.Children.Add(btn.btn);
-                            wins.Add(window.Key);
-                            
-                            if (key != "") {
-                                btn.key = key;
-                                groupexeicon[key] = btn;
-                                dockInnerButton insbtn = new(btn);
-                                insbtn.updatedata("New Instance...",false);
-                                btn.spinner.Children.Add(insbtn.btn);
-                                insbtn.btn.Click += (e,a) => {
-                                    Process.Start(path);
-                                };
-                            }
-                            dockInnerButton btni = new(btn,window.Key);
-                            btn.spinner.Children.Add(btni.btn);
-                            appics[window.Key] = new List<object>() {btni,btn};
                         }
-                        try {
-                            if (processResponding) {
-                                var module = prc.MainModule;
-                                if (module == null) throw new Exception();
-                                string Key = App.settings.groupRunningApps == "Executable" ? module.FileName : App.settings.groupRunningApps == "Instance" ? prc.Id.ToString() : "";
-                                if ((App.settings.groupRunningApps == "Executable" || App.settings.groupRunningApps == "Instance") == false || groupexeicon.ContainsKey(Key) == false) {
-                                    createicon(Key,module.FileName);
+                        dockInnerButton btni = new(btn,window.Key);
+                        btn.spinner.Children.Add(btni.btn);
+                        appics[window.Key] = new List<object>() {btni,btn};
+                    }
+                    try {
+                        var module = prc.MainModule;
+                        if (module == null) throw new Exception();
+                        string Key = App.settings.groupRunningApps == "Executable" ? module.FileName : App.settings.groupRunningApps == "Instance" ? prc.Id.ToString() : "";
+                        if ((App.settings.groupRunningApps == "Executable" || App.settings.groupRunningApps == "Instance") == false || groupexeicon.ContainsKey(Key) == false) {
+                            createicon(Key,module.FileName);
+                        }else {
+                            dockButton btn = groupexeicon[Key];
+                            if (!btn.hwnds.Contains(window.Key)) {
+                                btn.hwnds.Add(window.Key);
+                                dockInnerButton btni = new(btn,window.Key);
+                                if (appics.ContainsKey(window.Key)) {
+                                    appics[window.Key].Add(btni);
                                 }else {
-                                    dockButton btn = groupexeicon[Key];
-                                    btn.hwnds.Add(window.Key);
-                                    dockInnerButton btni = new(btn,window.Key);
-                                    if (appics.ContainsKey(window.Key)) {
-                                        appics[window.Key].Add(btni);
-                                    }else {
-                                        appics[window.Key] = new List<object>() {btn,btni};
-                                    }
-                                    wins.Add(window.Key);
-                                    btn.spinner.Children.Add(btni.btn);
-                                    
+                                    appics[window.Key] = new List<object>() {btn,btni};
                                 }
+                                wins.Add(window.Key);
+                                btn.spinner.Children.Add(btni.btn);
+                                Console.WriteLine("New window, " + window.Value);
                             }
-                        }catch {createicon();}
+                        }
                         
-                    }
-                    if (appics.ContainsKey(window.Key)) {
-                        var l = appics[window.Key];
-                        WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
-                        GetWindowPlacement(fgw, ref placement);
-                        foreach (object x in l) {
-                            if (x is dockButton && !editedButtons.Contains(x)) {
-                                var btn = (dockButton)x;
-                                
-                                if (btn.hwnds.Contains(fgw) && windows.ContainsKey(fgw)) {
-                                    btn.updatedata(windows[fgw], (btn.hwnds.Contains(fgw) && placement.showCmd != 2));
-                                    try {
-                                        var mdl = prc.MainModule;
-                                        if (mdl != null) {
-                                            var ico = GetAppIcon(fgw) ?? App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined);
-                                            if (ico != null) btn.updateicon(ico);
-                                        }
-                                    }catch {}
-                                }else {
-                                    btn.updatedata(window.Value, (btn.hwnds.Contains(fgw) && placement.showCmd != 2));
-                                    try {
-                                        var mdl = prc.MainModule;
-                                        if (mdl != null) {
-                                            var ico = GetAppIcon(window.Key) ?? App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined);
-                                            if (ico != null) btn.updateicon(ico);
-                                        }
-                                    }catch {}
-                                }
-                                
-                            }else if (x is dockInnerButton && !editedButtons.Contains(x)) {
-                                var btn = (dockInnerButton)x;
-                                btn.updatedata(window.Value, (fgw == window.Key && placement.showCmd != 2));
-                                var ico = GetAppIcon(window.Key);
-                                if (ico != null) btn.updateicon(ico);
-                            }
-                            editedButtons.Add(x);
-                        }
-                    }
+                    }catch {createicon();}
+                    
+                
+                    
                 }
-            }
-        }
-        if (wins.Count == 0) {
-            if (rapsep != null && rapsep.Parent == runningapps) {
-                runningapps.Children.Remove(rapsep);
+                if (appics.ContainsKey(window.Key)) {
+                    var l = appics[window.Key];
+                    WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
+                    GetWindowPlacement(fgw, ref placement);
+                    foreach (object x in l) {
+                        if (x is dockButton) {
+                            var btn = (dockButton)x;
+                            Console.WriteLine("dock button");
+                            if (btn.hwnds.Contains(fgw) && windows.ContainsKey(fgw)) {
+                                Console.WriteLine("Foreground!! " + windows[fgw]);
+                                btn.hd = fgw;
+                                btn.updatedata(windows[fgw], placement.showCmd != 2);
+                                try {
+                                    var mdl = prc.MainModule;
+                                    if (mdl != null) {
+                                        var ico = GetAppIcon(fgw) ?? App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined);
+                                        if (ico != null) btn.updateicon(ico);
+                                    }
+                                }catch {}
+                            }else {
+                                btn.hd = window.Key;
+                                btn.updatedata(window.Value, (btn.hwnds.Contains(fgw) && placement.showCmd != 2));
+                                try {
+                                    var mdl = prc.MainModule;
+                                    if (mdl != null) {
+                                        var ico = GetAppIcon(window.Key) ?? App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined);
+                                        if (ico != null) btn.updateicon(ico);
+                                    }
+                                }catch {}
+                            }
+                            
+                        }else if (x is dockInnerButton) { // && !editedButtons.Contains(x)
+                            Console.WriteLine("dock inner button");
+                            var btn = (dockInnerButton)x;
+                            btn.updatedata(window.Value, (fgw == window.Key && placement.showCmd != 2));
+                            var ico = GetAppIcon(window.Key);
+                            if (ico != null) btn.updateicon(ico);
+                        }
+                        editedButtons.Add(x);
+                    }
+                }else {Console.WriteLine("App icon not found!!!");}
             }
         }
         List<HWND> rmdw = new();
@@ -885,6 +888,11 @@ public partial class MainWindow : Window
             }
             
         }
+        if (wins.Count == 0) {
+            if (rapsep != null && rapsep.Parent == runningapps) {
+                runningapps.Children.Remove(rapsep);
+            }
+        }
     }
     dockButton? findfirstdockbutton(List<object> l) {
         foreach (object i in l) {
@@ -914,6 +922,7 @@ public partial class MainWindow : Window
         bool activ = false;
         public List<HWND> hwnds = new();
         public string key = "";
+        public HWND hd = 0;
         public void updatedata(string title, bool active = false) {
             btntip.Content = title;
             activ = active;
@@ -930,7 +939,8 @@ public partial class MainWindow : Window
         public void updateicon(ImageSource imgs) {
             ico.Source = imgs;
         }
-        public dockButton(MainWindow w,HWND hd = 0) {
+        public dockButton(MainWindow w,HWND hdd = 0) {
+            hd = hdd;
             spinnerscroll.Content = spinner;
             Border spinnercont = new()
             {

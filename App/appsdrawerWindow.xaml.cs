@@ -80,7 +80,8 @@ public partial class appsdrawerWindow : Window
         mtb.TextChanged += (e,a) => {reloadlist();};
     }
 
-    string smp = Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms);
+    string smp = Environment.GetFolderPath(Environment.SpecialFolder.Programs);
+    string smpc = Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms);
 
     void startnextthread() {
         if (threads.Count > 0) {
@@ -93,18 +94,32 @@ public partial class appsdrawerWindow : Window
         threads.Clear();
         if (filter == null) filter = mtb.Text;
         wp.Children.Clear();
-        List<string> dirs = Directory.GetDirectories(smp).ToList();
+        List<string> dirs = Directory.GetDirectories(smpc).ToList();
+        foreach (string d in Directory.GetDirectories(smp)) {
+            dirs.Add(d);
+        }
+        Dictionary<string,WrapPanel> wpas = new();
+        Dictionary<string,StackPanel> sps = new();
+        dirs.Insert(0, smpc);
         dirs.Insert(0, smp);
         foreach (string dir in dirs) {
             try {
                 string[] fils = Directory.GetFiles(dir);
-                StackPanel sp = new() {Orientation = Orientation.Vertical};
-                Label titlelabel = new() {FontSize = 16, Content = Path.GetFileName(dir),Foreground = settings.appsDrawerTheme == "Dark" ? Brushes.White : Brushes.Black};
-                WrapPanel wpa = new();
-                sp.Children.Add(titlelabel);
-                sp.Children.Add(wpa);
+                WrapPanel wpa;
+                StackPanel sp;
+                if (wpas.ContainsKey(Path.GetFileName(dir).ToLower())) {
+                    wpa = wpas[Path.GetFileName(dir).ToLower()];
+                    sp = sps[Path.GetFileName(dir).ToLower()];
+                }else {
+                    sp = new() {Orientation = Orientation.Vertical};
+                    Label titlelabel = new() {FontSize = 16, Content = Path.GetFileName(dir),Foreground = settings.appsDrawerTheme == "Dark" ? Brushes.White : Brushes.Black};
+                    wpa = new();
+                    sp.Children.Add(titlelabel);
+                    sp.Children.Add(wpa);
+                    wpas[Path.GetFileName(dir).ToLower()] = wpa;
+                    sps[Path.GetFileName(dir).ToLower()] = sp;
+                }
                 
-                bool add = true;
                 foreach (string file in fils) {
                     string extension = Path.GetExtension(file).ToLower();
                     if ((extension == ".lnk" || extension == ".exe") && Path.GetFileName(file).Replace(extension,"").ToLower().Contains(filter.ToLower())) {
@@ -139,14 +154,13 @@ public partial class appsdrawerWindow : Window
                             });
                             Close();
                         };
-                        if (add) {
-                            add = false;
+                        if (!wp.Children.Contains(sp)) {
                             wp.Children.Add(sp);
                         }
                     }
                 }
                 
-            }catch {}
+            }catch (Exception e) {Console.WriteLine(e);}
         }
         startnextthread();
     }
