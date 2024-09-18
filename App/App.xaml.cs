@@ -147,6 +147,23 @@ public partial class App : Application
         }
     }
 
+    public static Thickness? getThick(string str) {
+        if (str.Contains(",")) {
+            try {
+                var split = str.Split(',');
+                return new Thickness(double.Parse(split[0]), double.Parse(split[1]), double.Parse(split[2]), double.Parse(split[3]));
+            }catch {
+                return null;
+            }
+        }else {
+            try {
+                return new Thickness(double.Parse(str));
+            }catch {
+                return null;
+            }
+        }
+    }
+
     public class settingsDataType {
         public int iconSize = 48;
         public double animationSpeed = 5;
@@ -171,6 +188,10 @@ public partial class App : Application
         public string submenuButtonStyleToUse = "asbs";
         public string submenuBackground = "#FFFFFF";
         public string submenuForeground = "#000000";
+        public string stylesPath = "";
+        public bool enableAppsDrawerBlur = true;
+        public bool useIconsInSubmenus = false;
+        public byte appsMenuAlpha = 150;
     }
     public class iconDataType {
         public string name = "";

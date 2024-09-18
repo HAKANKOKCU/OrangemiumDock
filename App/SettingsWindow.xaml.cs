@@ -142,5 +142,25 @@ public partial class SettingsWindow : Window
                     break;
             }
         };
+        adbb.IsChecked = settings.enableAppsDrawerBlur;
+        adbb.Checked += (e,a) => {settings.enableAppsDrawerBlur = true;};
+        adbb.Unchecked += (e,a) => {settings.enableAppsDrawerBlur = false;};
+        dbs.Text = settings.dockButtonStyleToUse;
+        dbs.TextChanged += (a,e) => {
+            settings.dockButtonStyleToUse = dbs.Text;
+        };
+        dbsub.Text = settings.submenuButtonStyleToUse;
+        dbsub.TextChanged += (a,e) => {
+            settings.submenuButtonStyleToUse = dbsub.Text;
+        };
+        uis.IsChecked = settings.useIconsInSubmenus;
+        uis.Checked += (e,a) => {settings.useIconsInSubmenus = true;};
+        uis.Unchecked += (e,a) => {settings.useIconsInSubmenus = false;};
+        adwt.IsChecked = settings.appsDrawerTheme == "Light";
+        adwt.Checked += (e,a) => {settings.appsDrawerTheme = "Light";};
+        adwt.Unchecked += (e,a) => {settings.appsDrawerTheme = "Dark";};
+        udat.IsChecked = settings.registerAsAppBar;
+        udat.Checked += (e,a) => {settings.registerAsAppBar = true;};
+        udat.Unchecked += (e,a) => {settings.registerAsAppBar = false;};
     }
 }

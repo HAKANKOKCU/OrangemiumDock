@@ -23,6 +23,61 @@ namespace OrangemiumDock;
 /// </summary>
 public partial class appsdrawerWindow : Window
 {
+    [DllImport("user32.dll")]
+    internal static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct WindowCompositionAttributeData
+    {
+        public WindowCompositionAttribute Attribute;
+        public IntPtr Data;
+        public int SizeOfData;
+    }
+
+    internal enum WindowCompositionAttribute
+    {
+        // ...
+        WCA_ACCENT_POLICY = 19
+        // ...
+    }
+
+    internal enum AccentState
+    {
+        ACCENT_DISABLED = 0,
+        ACCENT_ENABLE_GRADIENT = 1,
+        ACCENT_ENABLE_TRANSPARENTGRADIENT = 2,
+        ACCENT_ENABLE_BLURBEHIND = 3,
+        ACCENT_INVALID_STATE = 4
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct AccentPolicy
+    {
+        public AccentState AccentState;
+        public int AccentFlags;
+        public int GradientColor;
+        public int AnimationId;
+    }
+    internal void EnableBlur()
+    {
+        var windowHelper = new WindowInteropHelper(this);
+        
+        var accent = new AccentPolicy();
+        var accentStructSize = Marshal.SizeOf(accent);
+        accent.AccentState = AccentState.ACCENT_ENABLE_BLURBEHIND;
+        
+        var accentPtr = Marshal.AllocHGlobal(accentStructSize);
+        Marshal.StructureToPtr(accent, accentPtr, false);
+        
+        var data = new WindowCompositionAttributeData();
+        data.Attribute = WindowCompositionAttribute.WCA_ACCENT_POLICY;
+        data.SizeOfData = accentStructSize;
+        data.Data = accentPtr;
+
+        SetWindowCompositionAttribute(windowHelper.Handle, ref data);
+        
+        Marshal.FreeHGlobal(accentPtr);
+    }
     App.settingsDataType settings;
     List<Thread> threads = new();
     Dictionary<string,BitmapSource> iconcache = new();
@@ -31,9 +86,9 @@ public partial class appsdrawerWindow : Window
         InitializeComponent();
         settings = App.settings;
         if (App.settings.appsDrawerTheme == "Dark") {
-            Background = new SolidColorBrush(Color.FromArgb(120,0,0,0));
+            Background = new SolidColorBrush(Color.FromArgb(App.settings.appsMenuAlpha,0,0,0));
         }else {
-            Background = new SolidColorBrush(Color.FromArgb(120,255,255,255));
+            Background = new SolidColorBrush(Color.FromArgb(App.settings.appsMenuAlpha,255,255,255));
             mtb.CaretBrush = Brushes.Black;
             mtb.Foreground = Brushes.Black;
             tb.Background = Brushes.White;
@@ -56,6 +111,8 @@ public partial class appsdrawerWindow : Window
             wp.Margin = new Thickness(0,42,0,0);
             sw.Margin = new Thickness(0,0,App.settings.iconSize,0);
             mdp.Children.Add(window.mtc);
+        }else {
+            wp.Margin = new Thickness(0,42,0,0);
         }
         
        
@@ -75,7 +132,7 @@ public partial class appsdrawerWindow : Window
                 Close();
             }
         };
-        Loaded += (e,a) => {Activate();mtb.Focus();Deactivated += (e,a) => {try {Close();}catch{}};};
+        Loaded += (e,a) => {Activate();if (App.settings.enableAppsDrawerBlur) EnableBlur();mtb.Focus();Deactivated += (e,a) => {try {Close();}catch{}};};
         reloadlist();
         mtb.TextChanged += (e,a) => {reloadlist();};
     }
@@ -122,7 +179,8 @@ public partial class appsdrawerWindow : Window
                 
                 foreach (string file in fils) {
                     string extension = Path.GetExtension(file).ToLower();
-                    if ((extension == ".lnk" || extension == ".exe") && Path.GetFileName(file).Replace(extension,"").ToLower().Contains(filter.ToLower())) {
+                    string name = Path.GetFileName(file).Replace(extension,"").ToLower();
+                    if ((extension == ".lnk" || extension == ".exe") && name.Contains(filter.ToLower()) && ((!name.Contains("uninstall") && !name.Contains("readme")) || name.Contains("tool"))) {
                         Button btn = new() {Width = 124, Height = 124};
                         btn.Style = (Style)App.Current.Resources[settings.appsDrawerTheme == "Dark" ? "OBtnLight" : "OBtn"];
                         btn.Background = Brushes.Transparent;

@@ -6,74 +6,166 @@
         xmlns:local="clr-namespace:OrangemiumDock"
         mc:Ignorable="d"
         Title="Settings" Height="450" Width="800" WindowStartupLocation="CenterScreen">
-    <ScrollViewer>
-        <StackPanel Name="settingsList">
-            <StackPanel Orientation="Horizontal" Background="{x:Static SystemParameters.WindowGlassBrush}" Name="title">
-                <Label Foreground="White" FontSize="24">OrangemiumDock Settings</Label>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label VerticalAlignment="Center">Icon Size</Label>
-                <TextBox VerticalAlignment="Center" Name="iconSizeTB" Style="{StaticResource OTBox}"></TextBox>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label VerticalAlignment="Center">Animation Speed</Label>
-                <TextBox VerticalAlignment="Center" Name="anisTB" Style="{StaticResource OTBox}"></TextBox>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label VerticalAlignment="Center">Dock Color</Label>
-                <TextBox VerticalAlignment="Center" Name="dockcolorTB" Style="{StaticResource OTBox}"></TextBox>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label VerticalAlignment="Center">Dock Border Radius</Label>
-                <TextBox VerticalAlignment="Center" Name="dockradiusTB" Style="{StaticResource OTBox}"></TextBox>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label VerticalAlignment="Center">Separator Color</Label>
-                <TextBox VerticalAlignment="Center" Name="sepcolorTB" Style="{StaticResource OTBox}"></TextBox>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label VerticalAlignment="Center">Active App Color</Label>
-                <TextBox VerticalAlignment="Center" Name="actcolorTB" Style="{StaticResource OTBox}"></TextBox>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label VerticalAlignment="Center">Dock Position</Label>
-                <ComboBox Name="dockpos">
-                    <ComboBoxItem Content="Bottom" Style="{StaticResource OCIT}"></ComboBoxItem>
-                    <ComboBoxItem Content="Top" Style="{StaticResource OCIT}"></ComboBoxItem>
-                    <ComboBoxItem Content="Right" Style="{StaticResource OCIT}"></ComboBoxItem>
-                    <ComboBoxItem Content="Left" Style="{StaticResource OCIT}"></ComboBoxItem>
-                </ComboBox>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label VerticalAlignment="Center">Group Running Apps</Label>
-                <ComboBox Name="ruapps">
-                    <ComboBoxItem Content="Group as Executables" Style="{StaticResource OCIT}"></ComboBoxItem>
-                    <ComboBoxItem Content="Group as Instances" Style="{StaticResource OCIT}"></ComboBoxItem>
-                    <ComboBoxItem Content="Don't Group" Style="{StaticResource OCIT}"></ComboBoxItem>
-                </ComboBox>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label VerticalAlignment="Center">Auto Hide</Label>
-                <ComboBox Name="auhid">
-                    <ComboBoxItem Content="Smart" Style="{StaticResource OCIT}"></ComboBoxItem>
-                    <ComboBoxItem Content="On (Buggier than Smart)" Style="{StaticResource OCIT}"></ComboBoxItem>
-                    <ComboBoxItem Content="Off" Style="{StaticResource OCIT}"></ComboBoxItem>
-                </ComboBox>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label VerticalAlignment="Center">Ticker Interval (Requires restart)</Label>
-                <TextBox VerticalAlignment="Center" Name="tickinvTB" Style="{StaticResource OTBox}"></TextBox>
-                <Label VerticalAlignment="Center">(DON'T TOUCH IF YOU DON'T KNOW WHAT YOU ARE DOING!!)</Label>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label VerticalAlignment="Center">Dock Transform Y</Label>
-                <TextBox VerticalAlignment="Center" Name="dtyTB" Style="{StaticResource OTBox}"></TextBox>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label VerticalAlignment="Center">Dock Transform X</Label>
-                <TextBox VerticalAlignment="Center" Name="dtxTB" Style="{StaticResource OTBox}"></TextBox>
-            </StackPanel>
-            <CheckBox Name="topmostCB">Top Most</CheckBox>
+    
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Background="{x:Static SystemParameters.WindowGlassBrush}" Name="title">
+            <Label Foreground="White" FontSize="24">OrangemiumDock Settings</Label>
         </StackPanel>
-    </ScrollViewer>
+        <TabControl>
+            <TabControl.Resources>
+                <Style TargetType="{x:Type TabPanel}">
+                    <Setter Property="Background" Value="Transparent"/>
+                </Style>
+                <Style TargetType="TabItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border Name="bdr" CornerRadius="10 10 0 0">
+                                    <Grid Name="Panel">
+                                        <ContentPresenter x:Name="ContentSite"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                ContentSource="Header"
+                                Margin="10,2"/>
+                                    </Grid>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="bdr" Property="Background" Value="{x:Static SystemParameters.WindowGlassBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="False">
+                                        <Setter TargetName="bdr" Property="Background" Value="Transparent" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+                <Style TargetType="TabControl">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabControl">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+                                    <ScrollViewer HorizontalScrollBarVisibility="Auto"  VerticalScrollBarVisibility="Hidden" >
+                                        <TabPanel x:Name="HeaderPanel"
+                        Panel.ZIndex ="1" 
+                        KeyboardNavigation.TabIndex="1"
+                        Grid.Column="0"
+                        Grid.Row="0"
+                        Margin="2,2,2,0"
+                        IsItemsHost="true"/>
+                                    </ScrollViewer>
+                                    <ContentPresenter x:Name="PART_SelectedContentHost"
+                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                    Margin="{TemplateBinding Padding}"
+                                    ContentSource="SelectedContent" Grid.Row="1"/>
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
+            <TabItem Header="Dock">
+                <ScrollViewer>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Icon Size</Label>
+                            <TextBox VerticalAlignment="Center" Name="iconSizeTB" Style="{StaticResource OTBox}"></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Dock Color</Label>
+                            <TextBox VerticalAlignment="Center" Name="dockcolorTB" Style="{StaticResource OTBox}"></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Dock Border Radius</Label>
+                            <TextBox VerticalAlignment="Center" Name="dockradiusTB" Style="{StaticResource OTBox}"></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Separator Color</Label>
+                            <TextBox VerticalAlignment="Center" Name="sepcolorTB" Style="{StaticResource OTBox}"></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Active App Color</Label>
+                            <TextBox VerticalAlignment="Center" Name="actcolorTB" Style="{StaticResource OTBox}"></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Dock Position</Label>
+                            <ComboBox Name="dockpos">
+                                <ComboBoxItem Content="Bottom" Style="{StaticResource OCIT}"></ComboBoxItem>
+                                <ComboBoxItem Content="Top" Style="{StaticResource OCIT}"></ComboBoxItem>
+                                <ComboBoxItem Content="Right" Style="{StaticResource OCIT}"></ComboBoxItem>
+                                <ComboBoxItem Content="Left" Style="{StaticResource OCIT}"></ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Group Running Apps</Label>
+                            <ComboBox Name="ruapps">
+                                <ComboBoxItem Content="Group as Executables" Style="{StaticResource OCIT}"></ComboBoxItem>
+                                <ComboBoxItem Content="Group as Instances" Style="{StaticResource OCIT}"></ComboBoxItem>
+                                <ComboBoxItem Content="Don't Group" Style="{StaticResource OCIT}"></ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Auto Hide</Label>
+                            <ComboBox Name="auhid">
+                                <ComboBoxItem Content="Smart" Style="{StaticResource OCIT}"></ComboBoxItem>
+                                <ComboBoxItem Content="On (Buggier than Smart)" Style="{StaticResource OCIT}"></ComboBoxItem>
+                                <ComboBoxItem Content="Off" Style="{StaticResource OCIT}"></ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Dock Transform Y</Label>
+                            <TextBox VerticalAlignment="Center" Name="dtyTB" Style="{StaticResource OTBox}"></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Dock Transform X</Label>
+                            <TextBox VerticalAlignment="Center" Name="dtxTB" Style="{StaticResource OTBox}"></TextBox>
+                        </StackPanel>
+                        <CheckBox Name="topmostCB">Top Most</CheckBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="Apps Drawer">
+                <ScrollViewer>
+                    <StackPanel>
+                        <CheckBox Name="adbb">Blur Background</CheckBox>
+                        <CheckBox Name="adwt">White Theme</CheckBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="Advanced">
+                <ScrollViewer>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Animation Speed</Label>
+                            <TextBox VerticalAlignment="Center" Name="anisTB" Style="{StaticResource OTBox}"></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Ticker Interval (Requires restart)</Label>
+                            <TextBox VerticalAlignment="Center" Name="tickinvTB" Style="{StaticResource OTBox}"></TextBox>
+                            <Label VerticalAlignment="Center">(DON'T TOUCH IF YOU DON'T KNOW WHAT YOU ARE DOING!!)</Label>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Dock Button Style</Label>
+                            <TextBox VerticalAlignment="Center" Name="dbs" Style="{StaticResource OTBox}"></TextBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Submenu Button Style</Label>
+                            <TextBox VerticalAlignment="Center" Name="dbsub" Style="{StaticResource OTBox}"></TextBox>
+                        </StackPanel>
+                        <CheckBox Name="uis">Use icon only style in submenus</CheckBox>
+                        <CheckBox Name="udat">Use AppBar in Dock (Like a taskbar, requires restart.)</CheckBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+        
+        
+        
+        
+    </DockPanel>
 </Window>

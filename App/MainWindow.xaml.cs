@@ -16,6 +16,8 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.Windows.Controls.Primitives;
 using WpfAppBar;
+using System.Text.Json.Nodes;
+using System.Dynamic;
 
 namespace OrangemiumDock;
 
@@ -97,6 +99,7 @@ public partial class MainWindow : Window
         {
         if (hWnd == shellWindow) return true;
         if (!IsWindowVisible(hWnd)) return true;
+        //if (!HasOwnerWindow(hWnd)) return true;
 
         int length = GetWindowTextLength(hWnd);
         if (length == 0) return true;
@@ -134,6 +137,9 @@ public partial class MainWindow : Window
 
   [DllImport("USER32.DLL")]
   private static extern bool IsWindowVisible(HWND hWnd);
+
+  //[DllImport("USER32.DLL")]
+  //private static extern bool HasOwnerWindow(HWND hWnd);
 
   [DllImport("USER32.DLL")]
   private static extern IntPtr GetShellWindow();
@@ -253,12 +259,15 @@ public partial class MainWindow : Window
     static SolidColorBrush activecolor = new SolidColorBrush();
     bool dockhovered = false;
     double cpadd = 0;
-    Grid? rapsep;
+    Border? rapsep;
     RECT? foregroundrct = null;
     public appsdrawerWindow? apdw = null;
+    static Dictionary<string, Object> styles = new();
+
+    
     public MainWindow()
     {
-       
+        
         InitializeComponent();
         if (!Directory.Exists(appfolderpath)) {
             Directory.CreateDirectory(appfolderpath);
@@ -278,12 +287,22 @@ public partial class MainWindow : Window
             }
             App.settings = s;
         }
+        try {
+            var s = JsonConvert.DeserializeObject<Dictionary<string, Object>>(File.ReadAllText(App.settings.stylesPath));
+            if (s != null) {
+                styles = s;
+            }
+        }catch {
+
+        }
         
         ShowInTaskbar = false;
         //iconsize = System.Windows.SystemParameters.PrimaryScreenHeight - System.Windows.SystemParameters.WorkArea.Height;
         hwnd = new WindowInteropHelper(this).Handle;
         Loaded += (e,a) => {
             hwnd = new WindowInteropHelper(this).Handle;
+            repos();
+            appbar();
         };
         MenuItem setitm = new() {Header = "Settings..."};
         mainmenu.Items.Add(setitm);
@@ -358,19 +377,19 @@ public partial class MainWindow : Window
         mtc.Children.Add(mbar);
         
         if (!App.settings.registerAsAppBar) {
-            WindowStyle = WindowStyle.None;
-            AllowsTransparency = true;
+            
+            
         }
+        WindowStyle = WindowStyle.None;
+        AllowsTransparency = true;
         Background = Brushes.Transparent;
         Content = mtc;
         //tb.Topmost = true;
         HWND tbh = 0;
-        Loaded += (e,a) => {
-            tbh = new WindowInteropHelper(this).Handle;
-        };
 
         if (App.settings.automaticSeparatorAtRunningApps) rapsep = createseparator();
-        
+
+        DispatcherTimer AnimationTicker = new() {Interval = TimeSpan.FromMilliseconds(1)};
         DispatcherTimer dt = new() {Interval = TimeSpan.FromMilliseconds(App.settings.tickerInterval)};
         dt.Tick += (e,a) => {
             HWND fg = GetForegroundWindow();
@@ -390,11 +409,14 @@ public partial class MainWindow : Window
                 //Console.WriteLine(aa.Top);
                 if (aa.Bottom >= SystemParameters.FullPrimaryScreenHeight && aa.Top == 0) {
                     Hide(); //hide in fullscreen apps/games.
+                    AnimationTicker.Stop();
                 }else {
+                    AnimationTicker.Start();
                     Show();
                 }
             }else {
                 foregroundrct = null;
+                AnimationTicker.Start();
                 Show();
             }
             if (App.settings.autohide == "Off" || apdw != null) {
@@ -409,7 +431,7 @@ public partial class MainWindow : Window
         };
         dt.Start();
         
-        DispatcherTimer AnimationTicker = new() {Interval = TimeSpan.FromMilliseconds(1)};
+        
         AnimationTicker.Tick += (e,a) => {
             if ((App.settings.autohide == "On" || App.settings.autohide == "Smart") && apdw == null) {
                 double target = 0;
@@ -473,8 +495,16 @@ public partial class MainWindow : Window
                     }
                     foreach (object y in ((StackPanel)x).Children) {
                         if (y is Button) {
+                            var btnc = (Button)y;
                             dockButton btn = dockbtn[(Button)y];
-                            docksize += App.settings.iconSize;
+                            if (btnc.Visibility != Visibility.Collapsed) {
+                                if (App.settings.dockPosition == "Top" || App.settings.dockPosition == "Bottom") {
+                                    docksize += (int)(btnc.Width + btnc.Margin.Left + btnc.Margin.Right);
+                                }else {
+                                    docksize += (int)(btnc.Height + btnc.Margin.Top + btnc.Margin.Bottom);
+                                }
+                            }
+                            //docksize += App.settings.iconSize;
                             if (Math.Ceiling(currentsize) < docksize || docksize < Math.Ceiling(currentsize)) {
                                 if (docksize > Math.Ceiling(currentsize)) {
                                     double diff = docksize - currentsize;
@@ -501,8 +531,16 @@ public partial class MainWindow : Window
                                     btn.ico.Opacity = 1;
                                 }
                             }
-                        }else if (y is Grid) {
-                            docksize += 7;
+                        }else if (y is Border) {
+                            //docksize += 7;
+                            var grd = (Border)y;
+                            if (grd.Visibility != Visibility.Collapsed) {
+                                if (App.settings.dockPosition == "Top" || App.settings.dockPosition == "Bottom") {
+                                    docksize += (int)(grd.Width + grd.Margin.Left + grd.Margin.Right);
+                                }else {
+                                    docksize += (int)(grd.Height + grd.Margin.Top + grd.Margin.Bottom);
+                                }
+                            }
                         }
                     }
                     currentsize += (docksize - currentsize) / App.settings.animationSpeed;
@@ -533,7 +571,10 @@ public partial class MainWindow : Window
         };
         AnimationTicker.Start();
         loadsettings();
+        
     }
+
+    
     bool appbarregistered = true;
 
     void repos() {
@@ -608,32 +649,32 @@ public partial class MainWindow : Window
         }
     }
     void appbar() {
-        //try {
-        //    if (App.settings.registerAsAppBar) {
-        //        WindowStyle = WindowStyle.SingleBorderWindow;
-        //        if (App.settings.dockPosition == "Bottom") {
-        //            AppBarFunctions.SetAppBar(this, ABEdge.Bottom);
-        //        }
-        //        if (App.settings.dockPosition == "Top") {
-        //            AppBarFunctions.SetAppBar(this, ABEdge.Top);
-        //        }
-        //        if (App.settings.dockPosition == "Left") {
-        //            AppBarFunctions.SetAppBar(this, ABEdge.Left);
-        //        }
-        //        if (App.settings.dockPosition == "Right") {
-        //            AppBarFunctions.SetAppBar(this, ABEdge.Right);
-        //        }
-        //    }else {
-        //        AppBarFunctions.SetAppBar(this, ABEdge.None);
-        //        WindowStyle = WindowStyle.None;
-        //    }
-        //    appbarregistered = true;
-        //}catch (Exception e) {
-        //    MessageBox.Show(e.ToString());
-        //}
+        try {
+            if (App.settings.registerAsAppBar) {
+                //WindowStyle = WindowStyle.SingleBorderWindow;
+                if (App.settings.dockPosition == "Bottom") {
+                    AppBarFunctions.SetAppBar(this, ABEdge.Bottom);
+                }
+                if (App.settings.dockPosition == "Top") {
+                    AppBarFunctions.SetAppBar(this, ABEdge.Top);
+                }
+                if (App.settings.dockPosition == "Left") {
+                    AppBarFunctions.SetAppBar(this, ABEdge.Left);
+                }
+                if (App.settings.dockPosition == "Right") {
+                    AppBarFunctions.SetAppBar(this, ABEdge.Right);
+                }
+            }else {
+                //AppBarFunctions.SetAppBar(this, ABEdge.None);
+                WindowStyle = WindowStyle.None;
+            }
+            appbarregistered = true;
+        }catch (Exception e) {
+            MessageBox.Show(e.ToString());
+        }
     }
-    Grid createseparator() {
-        Grid sp = new();
+    Border createseparator() {
+        Border sp = new();
         sp.Background = new SolidColorBrush(App.getColor(App.settings.separatorColor) ?? Color.FromRgb(255,255,255));
         if (App.settings.dockPosition == "Top" || App.settings.dockPosition == "Bottom") {
             sp.Width = 1;
@@ -643,6 +684,10 @@ public partial class MainWindow : Window
             //sp.Width = iconsize - 6;
         }
         sp.Margin = new Thickness(3);
+        if (styles.ContainsKey("separator")) {
+            //Console.WriteLine("apply separator style...");
+            applyStyle(sp, (JObject)styles["separator"]);
+        }
         return sp;
     }
 
@@ -719,7 +764,7 @@ public partial class MainWindow : Window
                 btn.ctx.Items.Add(edititm);
             }
         }
-        appbar();
+        //appbar();
     }
     void savesettings() {
         File.WriteAllText(settingspath,JsonConvert.SerializeObject(App.settings));
@@ -751,7 +796,7 @@ public partial class MainWindow : Window
                                     include = false;
                                 }
                             }
-                        }else {include = false;}
+                        }else {}
                     }catch {}
                 }else {include = false;}
                 if (include && !appics.ContainsKey(window.Key)) {
@@ -871,6 +916,7 @@ public partial class MainWindow : Window
                 //if (btn.hwnds.Count == 0) {
                 //    dockitems.Children.Remove(btn.btn);
                 //}
+                
                 var btn = x;
                 btn.parentdb.spinner.Children.Remove(btn.btn);
                 btn.parentdb.hwnds.Remove(ptr);
@@ -878,6 +924,7 @@ public partial class MainWindow : Window
                     runningapps.Children.Remove(btn.parentdb.btn);
                     groupexeicon.Remove(btn.parentdb.key);
                 }
+                appics.Remove(ptr);
             //}else {
             //    var btn = findfirstdockinnerbutton(appics[ptr]);
             //    btn.parentdb.spinner.Children.Remove(btn.btn);
@@ -894,6 +941,125 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    static void applyStyle(UIElement t, JObject style) {
+        if (style.ContainsKey("visibility")) {
+            switch ((style["visibility"] ?? "").ToString()) {
+                case "collapsed":
+                    t.Visibility = Visibility.Collapsed;
+                    break;
+                case "hidden":
+                    t.Visibility = Visibility.Hidden;
+                    break;
+                default:
+                    t.Visibility = Visibility.Visible;
+                    break;
+            }
+        }
+        
+        if (t is Control) {
+            var target = (Control)t;
+            if (style.ContainsKey("backgroundColor")) {
+                var clr = App.getColor((style["backgroundColor"] ?? "").ToString() ?? "");
+                if (clr != null)
+                target.Background = new SolidColorBrush((Color)clr);
+            }
+            if (style.ContainsKey("margin")) {
+                var thick = App.getThick((style["margin"] ?? "").ToString() ?? "");
+                if (thick != null)
+                target.Margin = (Thickness)thick;
+            }
+            if (style.ContainsKey("padding")) {
+                var thick = App.getThick((style["padding"] ?? "").ToString() ?? "");
+                if (thick != null)
+                target.Padding = (Thickness)thick;
+            }
+            if (style.ContainsKey("width")) {
+                if (style["width"] != null) {
+                    target.Width = (int)style["width"];
+                }
+            }
+            if (style.ContainsKey("height")) {
+                if (style["height"] != null) {
+                    target.Height = (int)style["height"];
+                }
+            }
+            if (style.ContainsKey("maxWidth")) {
+                if (style["maxWidth"] != null) {
+                    target.MaxWidth = (int)style["maxWidth"];
+                }
+            }
+            if (style.ContainsKey("maxHeight")) {
+                if (style["maxHeight"] != null) {
+                    target.MaxHeight = (int)style["maxHeight"];
+                }
+            }
+            if (style.ContainsKey("minWidth")) {
+                if (style["minWidth"] != null) {
+                    target.MinWidth = (int)style["minWidth"];
+                }
+            }
+            if (style.ContainsKey("minHeight")) {
+                if (style["minHeight"] != null) {
+                    target.MinHeight = (int)style["minHeight"];
+                }
+            }
+        }
+        if (t is Border) {
+            var target = (Border)t;
+            if (style.ContainsKey("backgroundColor")) {
+                var clr = App.getColor((style["backgroundColor"] ?? "").ToString() ?? "");
+                if (clr != null)
+                target.Background = new SolidColorBrush((Color)clr);
+            }
+            if (style.ContainsKey("margin")) {
+                var thick = App.getThick((style["margin"] ?? "").ToString() ?? "");
+                if (thick != null)
+                target.Margin = (Thickness)thick;
+            }
+            if (style.ContainsKey("padding")) {
+                var thick = App.getThick((style["padding"] ?? "").ToString() ?? "");
+                if (thick != null)
+                target.Padding = (Thickness)thick;
+            }
+            if (style.ContainsKey("cornerRadius")) {
+                var radius = App.getCornerRadius((style["cornerRadius"] ?? "").ToString() ?? "");
+                if (radius != null)
+                target.CornerRadius = (CornerRadius)radius;
+            }
+            if (style.ContainsKey("width")) {
+                if (style["width"] != null) {
+                    target.Width = (int)style["width"];
+                }
+            }
+            if (style.ContainsKey("height")) {
+                if (style["height"] != null) {
+                    target.Height = (int)style["height"];
+                }
+            }
+            if (style.ContainsKey("maxWidth")) {
+                if (style["maxWidth"] != null) {
+                    target.MaxWidth = (int)style["maxWidth"];
+                }
+            }
+            if (style.ContainsKey("maxHeight")) {
+                if (style["maxHeight"] != null) {
+                    target.MaxHeight = (int)style["maxHeight"];
+                }
+            }
+            if (style.ContainsKey("minWidth")) {
+                if (style["minWidth"] != null) {
+                    target.MinWidth = (int)style["minWidth"];
+                }
+            }
+            if (style.ContainsKey("minHeight")) {
+                if (style["minHeight"] != null) {
+                    target.MinHeight = (int)style["minHeight"];
+                }
+            }
+        }
+    }
+
     dockButton? findfirstdockbutton(List<object> l) {
         foreach (object i in l) {
             if (i is dockButton) {
@@ -916,7 +1082,7 @@ public partial class MainWindow : Window
         public ContextMenu ctx = new();
         public Button btn = new() {BorderThickness = new Thickness(0),Background = Brushes.Transparent, Width = iconsize,Height = iconsize};
         public Image ico = new() {Width = iconsize / 2, Height = iconsize / 2,Stretch = Stretch.Uniform};
-        public StackPanel spinner = new();
+        public Panel spinner;
         public ScrollViewer spinnerscroll = new() {VerticalScrollBarVisibility = ScrollBarVisibility.Auto};
         public Popup spinnerpopup = new();
         bool activ = false;
@@ -940,6 +1106,11 @@ public partial class MainWindow : Window
             ico.Source = imgs;
         }
         public dockButton(MainWindow w,HWND hdd = 0) {
+            if (App.settings.useIconsInSubmenus) {
+                spinner = new WrapPanel() {MaxWidth=320};
+            }else {
+                spinner = new StackPanel() {MaxWidth=320};
+            }
             hd = hdd;
             spinnerscroll.Content = spinner;
             Border spinnercont = new()
@@ -985,16 +1156,21 @@ public partial class MainWindow : Window
                 };
             }
             hwnds.Add(hd);
+            if (styles.ContainsKey("dockButton")) {
+                applyStyle(btn, (JObject)styles["dockButton"]);
+            }
         }
     }
     public class dockInnerButton {
         public dockButton parentdb;
+        ToolTip btntip = new();
         public Button btn = new() {BorderThickness = new Thickness(0),Background = Brushes.Transparent, Height = iconsize};
         public Image ico = new() {Width = iconsize / 2, Height = iconsize / 2,Margin = new Thickness(iconsize / 8),Stretch = Stretch.Uniform,VerticalAlignment = VerticalAlignment.Center};
-        public Label name = new() {VerticalContentAlignment = VerticalAlignment.Center, Padding = new Thickness(12), Foreground = new SolidColorBrush(App.getColor(App.settings.submenuForeground) ?? Color.FromRgb(255,255,255))};
+        public TextBlock name = new() {VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(12), Foreground = new SolidColorBrush(App.getColor(App.settings.submenuForeground) ?? Color.FromRgb(255,255,255)),TextTrimming = TextTrimming.CharacterEllipsis};
         bool activ = false;
         public void updatedata(string title, bool active = false) {
-            name.Content = title;
+            name.Text = title;
+            btntip.Content = title;
             activ = active;
             if (active) {
                 btn.Background = activecolor;
@@ -1009,7 +1185,13 @@ public partial class MainWindow : Window
             parentdb = parent;
             DockPanel sp = new() {HorizontalAlignment = HorizontalAlignment.Left};
             sp.Children.Add(ico);
-            sp.Children.Add(name);
+            if (App.settings.useIconsInSubmenus) {
+                btn.Width = App.settings.iconSize;
+                btn.Height = App.settings.iconSize;
+                btn.ToolTip = btntip;
+            }else {
+                sp.Children.Add(name);
+            }
             btn.Content = sp;
             try {btn.Style = (Style)Application.Current.Resources[App.settings.submenuButtonStyleToUse];}catch {}
             if (hd != 0) {
@@ -1027,6 +1209,9 @@ public partial class MainWindow : Window
                         SetForegroundWindow(hd);
                     }
                 };
+            }
+            if (styles.ContainsKey("dockInnerButton")) {
+                applyStyle(btn, (JObject)styles["dockInnerButton"]);
             }
         }
     }
