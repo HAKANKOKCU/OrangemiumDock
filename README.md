@@ -15,12 +15,12 @@ OrangemiumDock (originally Budgie Dock) is a dock for your Windows desktop.
 | Feature | [BDock](https://github.com/HAKANKOKCU/Budgie-Dock) | ODock |
 | - | - | - |
 | Smart Auto Hide | :x: | ✅ |
+| AppBar (Taking space like a taskbar) | :x: | ✅ |
 | Multitask Implementation | Worser | Better |
 | Running apps icon | EXE icon + Saved to file | Actual window icon, Not saved (Better) |
 | Custom Popup Widgets (AKA Special Runpaths) | Apps drawer + Search + Shutdown | Only apps drawer (for now) |
 | Load Speed | Slower | Faster |
 | Accent Color | Orange | Follows your accent color |
-| Buggy | More | Less, but time will tell |
 | OS Support | Windows XP+ (Better) | Windows 10+ |
 # How can I compile myself?
 * Download the [/App](https://github.com/HAKANKOKCU/OrangemiumDock/tree/main/App) directory. using dotnet CLI or Visual Studio should work fine.
