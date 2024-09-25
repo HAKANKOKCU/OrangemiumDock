@@ -1,7 +1,7 @@
 # OrangemiumDock
 OrangemiumDock (originally Budgie Dock) is a dock for your Windows desktop.
 
-![resim](https://github.com/user-attachments/assets/d1dc8583-7b8d-44a4-a4ba-60174bc20591)
+![{5C5C90D9-85E3-498E-80BA-1AC6817FB08A}](https://github.com/user-attachments/assets/ade02140-25e4-4834-9227-a039325776b9)
 
 # How to use?
 * To download the lastest DEV; [Download this entire folder](https://github.com/HAKANKOKCU/OrangemiumDock/tree/main/App/bin/Debug/net8.0-windows) and run OrangemiumDock.exe
@@ -16,6 +16,7 @@ OrangemiumDock (originally Budgie Dock) is a dock for your Windows desktop.
 | - | - | - |
 | Smart Auto Hide | :x: | ✅ |
 | AppBar (Taking space like a taskbar) | :x: | ✅ |
+| Styling | Worser | Better |
 | Multitask Implementation | Worser | Better |
 | Running apps icon | EXE icon + Saved to file | Actual window icon, Not saved (Better) |
 | Custom Popup Widgets (AKA Special Runpaths) | Apps drawer + Search + Shutdown | Only apps drawer (for now) |
