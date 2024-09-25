@@ -83,6 +83,7 @@ public partial class appsdrawerWindow : Window
     Dictionary<string,BitmapSource> iconcache = new();
     public appsdrawerWindow(MainWindow window)
     {
+        bool ignorefirst = false;//App.settings.blurDock;
         InitializeComponent();
         settings = App.settings;
         if (App.settings.appsDrawerTheme == "Dark") {
@@ -93,7 +94,7 @@ public partial class appsdrawerWindow : Window
             mtb.Foreground = Brushes.Black;
             tb.Background = Brushes.White;
         }
-        
+        if (window.blr != null) window.blr.Hide();
         window.Content = new Grid();
         if (App.settings.dockPosition == "Bottom") {
             window.mtc.HorizontalAlignment = HorizontalAlignment.Center;
@@ -125,14 +126,25 @@ public partial class appsdrawerWindow : Window
                 window.mtc.VerticalAlignment = VerticalAlignment.Stretch;
             }catch {}
             window.apdw = null;
-            
+            if (window.blr != null) window.blr.Show();
         };
         KeyDown += (a,e) => {
             if (e.Key == Key.Escape) {
                 Close();
             }
+            if (e.Key == Key.F11) {
+                WindowState = WindowState.Normal;
+                try {
+                    mdp.Children.Remove(window.mtc);
+                    window.Content = window.mtc;
+                    window.mtc.HorizontalAlignment = HorizontalAlignment.Stretch;
+                    window.mtc.VerticalAlignment = VerticalAlignment.Stretch;
+                }catch {}
+                if (window.blr != null) window.blr.Show();
+                mdp.Margin = new Thickness(0);
+            }
         };
-        Loaded += (e,a) => {Activate();if (App.settings.enableAppsDrawerBlur) EnableBlur();mtb.Focus();Deactivated += (e,a) => {try {Close();}catch{}};};
+        Loaded += (e,a) => {Activate();if (App.settings.enableAppsDrawerBlur) EnableBlur();mtb.Focus();Deactivated += (e,a) => {if (ignorefirst) return; try {Close();}catch{}};};
         reloadlist();
         mtb.TextChanged += (e,a) => {reloadlist();};
     }
@@ -181,11 +193,30 @@ public partial class appsdrawerWindow : Window
                     string extension = Path.GetExtension(file).ToLower();
                     string name = Path.GetFileName(file).Replace(extension,"").ToLower();
                     if ((extension == ".lnk" || extension == ".exe") && name.Contains(filter.ToLower()) && ((!name.Contains("uninstall") && !name.Contains("readme")) || name.Contains("tool"))) {
-                        Button btn = new() {Width = 124, Height = 124};
+                        Button btn = new();
+                        if (App.settings.appsDrawerItemStyle == "Grid") {
+                            btn.Width = 124;
+                            btn.Height = 124;
+                        }else {
+                            btn.Width = 296;
+                            btn.Height = 64;
+                        }
+                        
                         btn.Style = (Style)App.Current.Resources[settings.appsDrawerTheme == "Dark" ? "OBtnLight" : "OBtn"];
                         btn.Background = Brushes.Transparent;
-                        StackPanel btns = new() {HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,Orientation = Orientation.Vertical};
-                        Image img = new() {HorizontalAlignment = HorizontalAlignment.Center,Width = 40, Height = 40,Margin = new Thickness(8)};
+                        Panel btns;
+                        Image img = new() {HorizontalAlignment = App.settings.appsDrawerItemStyle == "Grid" ? HorizontalAlignment.Center : HorizontalAlignment.Left,VerticalAlignment = VerticalAlignment.Center};
+                        if (App.settings.appsDrawerItemStyle == "Grid") {
+                            btns = new StackPanel() {HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,Orientation = App.settings.appsDrawerItemStyle == "Grid" ? Orientation.Vertical : Orientation.Horizontal};
+                            img.Margin = new Thickness(8);
+                            img.Width = 40;
+                            img.Height = 40;
+                        }else {
+                            btns = new Canvas();
+                            img.Margin = new Thickness(8,0,8,0);
+                            img.Width = 28;
+                            img.Height = 28;
+                        }
                         var path = file + ""; //remove reference
                         if (iconcache.ContainsKey(path)) {
                             img.Source = iconcache[path];
@@ -194,14 +225,21 @@ public partial class appsdrawerWindow : Window
                                 var ico = App.GetIcon(path,App.IconSize.Large,App.ItemState.Undefined);
                                 if (ico != null) {
                                     ico.Freeze();
-                                    iconcache.Add(path,ico);
+                                    try {iconcache.Add(path,ico);}catch {}
                                     Application.Current.Dispatcher.Invoke(new Action(() => {img.Source = ico;}));
                                 }
                                 startnextthread();
                             }));
                         }
                         btns.Children.Add(img);
-                        TextBlock lbl = new() {Foreground = settings.appsDrawerTheme == "Dark" ? Brushes.White : Brushes.Black, TextAlignment = TextAlignment.Center,HorizontalAlignment = HorizontalAlignment.Center, Text = Path.GetFileName(file).Replace(extension,""), TextWrapping = TextWrapping.Wrap};
+                        TextBlock lbl = new() {Foreground = settings.appsDrawerTheme == "Dark" ? Brushes.White : Brushes.Black, TextAlignment = TextAlignment.Center,HorizontalAlignment = App.settings.appsDrawerItemStyle == "Grid" ? HorizontalAlignment.Center : HorizontalAlignment.Left, Text = Path.GetFileName(file).Replace(extension,""), TextWrapping = TextWrapping.Wrap,VerticalAlignment = VerticalAlignment.Center};
+                        if (App.settings.appsDrawerItemStyle == "Grid") {
+
+                        }else {
+                            lbl.MaxWidth = 288;
+                            Canvas.SetLeft(lbl,40);
+                            //lbl.Margin = new Thickness(40,0,8,0);;
+                        }
                         btns.Children.Add(lbl);
                         btn.Content = btns;
                         wpa.Children.Add(btn);

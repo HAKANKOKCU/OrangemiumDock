@@ -12,6 +12,9 @@
         </ScrollViewer>
         <Border HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5" Background="Black" CornerRadius="16" Name="tb">
             <TextBox Name="mtb" BorderThickness="0" Background="Transparent" Foreground="White" Style="{StaticResource OTBox}" CaretBrush="White" Width="250" Height="32" FontSize="14" Padding="4" VerticalContentAlignment="Center"></TextBox>
+            <Border.Effect>
+                <DropShadowEffect Direction="-75" ShadowDepth="0" Opacity="0.8" BlurRadius="12"/>
+            </Border.Effect>
         </Border>
     </Grid>
 </Window>

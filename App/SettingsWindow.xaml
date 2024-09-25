@@ -69,28 +69,23 @@
                     </Setter>
                 </Style>
             </TabControl.Resources>
+            <TabItem Header="General">
+                <ScrollViewer>
+                    <StackPanel>
+                        <Label FontSize="16" FontWeight="Bold">Styles</Label>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Style Path (Drop To Textbox)</Label>
+                            <TextBox VerticalAlignment="Center" Name="stylepathTB" Style="{StaticResource OTBox}" AllowDrop="true"></TextBox>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
             <TabItem Header="Dock">
                 <ScrollViewer>
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Label VerticalAlignment="Center">Icon Size</Label>
                             <TextBox VerticalAlignment="Center" Name="iconSizeTB" Style="{StaticResource OTBox}"></TextBox>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Label VerticalAlignment="Center">Dock Color</Label>
-                            <TextBox VerticalAlignment="Center" Name="dockcolorTB" Style="{StaticResource OTBox}"></TextBox>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Label VerticalAlignment="Center">Dock Border Radius</Label>
-                            <TextBox VerticalAlignment="Center" Name="dockradiusTB" Style="{StaticResource OTBox}"></TextBox>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Label VerticalAlignment="Center">Separator Color</Label>
-                            <TextBox VerticalAlignment="Center" Name="sepcolorTB" Style="{StaticResource OTBox}"></TextBox>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Label VerticalAlignment="Center">Active App Color</Label>
-                            <TextBox VerticalAlignment="Center" Name="actcolorTB" Style="{StaticResource OTBox}"></TextBox>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Label VerticalAlignment="Center">Dock Position</Label>
@@ -148,14 +143,6 @@
                             <Label VerticalAlignment="Center">Ticker Interval (Requires restart)</Label>
                             <TextBox VerticalAlignment="Center" Name="tickinvTB" Style="{StaticResource OTBox}"></TextBox>
                             <Label VerticalAlignment="Center">(DON'T TOUCH IF YOU DON'T KNOW WHAT YOU ARE DOING!!)</Label>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Label VerticalAlignment="Center">Dock Button Style</Label>
-                            <TextBox VerticalAlignment="Center" Name="dbs" Style="{StaticResource OTBox}"></TextBox>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Label VerticalAlignment="Center">Submenu Button Style</Label>
-                            <TextBox VerticalAlignment="Center" Name="dbsub" Style="{StaticResource OTBox}"></TextBox>
                         </StackPanel>
                         <CheckBox Name="uis">Use icon only style in submenus</CheckBox>
                         <CheckBox Name="udat">Use AppBar in Dock (Like a taskbar, requires restart.)</CheckBox>

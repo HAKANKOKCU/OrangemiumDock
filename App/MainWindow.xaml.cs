@@ -230,6 +230,41 @@ public partial class MainWindow : Window
     }
     [DllImport("user32.dll")]
     static extern bool SetForegroundWindow (IntPtr hWnd);
+    [DllImport("user32.dll")]
+    internal static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct WindowCompositionAttributeData
+    {
+        public WindowCompositionAttribute Attribute;
+        public IntPtr Data;
+        public int SizeOfData;
+    }
+
+    internal enum WindowCompositionAttribute
+    {
+        // ...
+        WCA_ACCENT_POLICY = 19
+        // ...
+    }
+
+    internal enum AccentState
+    {
+        ACCENT_DISABLED = 0,
+        ACCENT_ENABLE_GRADIENT = 1,
+        ACCENT_ENABLE_TRANSPARENTGRADIENT = 2,
+        ACCENT_ENABLE_BLURBEHIND = 3,
+        ACCENT_INVALID_STATE = 4
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct AccentPolicy
+    {
+        public AccentState AccentState;
+        public int AccentFlags;
+        public int GradientColor;
+        public int AnimationId;
+    }
 
     List<IntPtr> wins = new();
     static Dictionary<IntPtr,List<object>> appics = new();
@@ -262,9 +297,10 @@ public partial class MainWindow : Window
     Border? rapsep;
     RECT? foregroundrct = null;
     public appsdrawerWindow? apdw = null;
-    static Dictionary<string, Object> styles = new();
-
     
+
+    public Window? blr = null;
+    public bool focusblur = true;
     public MainWindow()
     {
         
@@ -287,22 +323,51 @@ public partial class MainWindow : Window
             }
             App.settings = s;
         }
-        try {
-            var s = JsonConvert.DeserializeObject<Dictionary<string, Object>>(File.ReadAllText(App.settings.stylesPath));
-            if (s != null) {
-                styles = s;
-            }
-        }catch {
-
-        }
         
+
         ShowInTaskbar = false;
         //iconsize = System.Windows.SystemParameters.PrimaryScreenHeight - System.Windows.SystemParameters.WorkArea.Height;
         hwnd = new WindowInteropHelper(this).Handle;
+        bool actagain = true;
+        void blrf() {
+            if (actagain && blr != null && blr.IsVisible && focusblur && apdw == null) {
+                blr.Activate();
+                Topmost = false;
+                Topmost = true;
+                
+                Topmost = App.settings.topmost;
+                actagain = false;
+            }
+            if (actagain) focusblur = true;
+        }
         Loaded += (e,a) => {
             hwnd = new WindowInteropHelper(this).Handle;
             repos();
             appbar();
+            if (App.settings.blurDock == "Area") {
+                EnableBlur(this);
+            }else if (App.settings.blurDock == "DockOnly") {
+                blr = new();
+                blr.WindowStyle = WindowStyle.None;
+                blr.ShowInTaskbar = false;
+                blr.AllowsTransparency = true;
+                blr.Background = Brushes.Transparent;
+                
+                
+                blr.Activated += (e,a) => {blrf();};
+                blr.Loaded += (e,a) => {
+                    EnableBlur(blr);
+                    WindowInteropHelper wndHelper = new WindowInteropHelper(blr);
+
+                    int exStyle = (int)GetWindowLong(wndHelper.Handle, (int)GetWindowLongFields.GWL_EXSTYLE);
+
+                    exStyle |= (int)ExtendedWindowStyles.WS_EX_TOOLWINDOW;
+                    SetWindowLong(wndHelper.Handle, (int)GetWindowLongFields.GWL_EXSTYLE, (IntPtr)exStyle);
+                    blr.Show();
+                    blrf();
+                };
+                blr.Show();
+            }
         };
         MenuItem setitm = new() {Header = "Settings..."};
         mainmenu.Items.Add(setitm);
@@ -376,16 +441,21 @@ public partial class MainWindow : Window
         mbar.Children.Add(apsb);
         mtc.Children.Add(mbar);
         
-        if (!App.settings.registerAsAppBar) {
-            
-            
-        }
+        
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
         Background = Brushes.Transparent;
         Content = mtc;
         //tb.Topmost = true;
         HWND tbh = 0;
+        
+        Deactivated += (e,a) => actagain = true;
+        Activated += (e,a) => {
+            blrf();
+        };
+
+        loadsettings();
+        repos();
 
         if (App.settings.automaticSeparatorAtRunningApps) rapsep = createseparator();
 
@@ -409,14 +479,17 @@ public partial class MainWindow : Window
                 //Console.WriteLine(aa.Top);
                 if (aa.Bottom >= SystemParameters.FullPrimaryScreenHeight && aa.Top == 0) {
                     Hide(); //hide in fullscreen apps/games.
+                    if (blr != null) blr.Hide();
                     AnimationTicker.Stop();
                 }else {
                     AnimationTicker.Start();
+                    if (blr != null && apdw == null) blr.Show();
                     Show();
                 }
             }else {
                 foregroundrct = null;
                 AnimationTicker.Start();
+                if (blr != null && apdw == null) blr.Show();
                 Show();
             }
             if (App.settings.autohide == "Off" || apdw != null) {
@@ -428,6 +501,7 @@ public partial class MainWindow : Window
             }
             
             repos();
+            
         };
         dt.Start();
         
@@ -547,10 +621,11 @@ public partial class MainWindow : Window
                     if (Math.Ceiling(currentsize) == docksize) {
                         currentsize = docksize;
                     }
+                    
                     if (App.settings.dockPosition == "Top" || App.settings.dockPosition == "Bottom") {
-                        try{sp.Width = currentsize;}catch{}
+                        try{sp.Width = currentsize;}catch{sp.Width = 1;}
                     }else {
-                        try{sp.Height = currentsize;}catch{}
+                        try{sp.Height = currentsize;}catch{sp.Height = 1;}
                     }
                 }
             }
@@ -559,19 +634,47 @@ public partial class MainWindow : Window
                 if (App.settings.dockPosition == "Top" || App.settings.dockPosition == "Bottom") {
                     //sw.Width = docksize;
                     //apsb.Width = currentsize;
-                    mbar.Height = iconsize;
+                    //mbar.Height = iconsize;
                     mbar.Width = Double.NaN;
                 }else if (App.settings.dockPosition == "Right" || App.settings.dockPosition == "Left") {
                     //sw.Height = docksize;
                     //apsb.Height = currentsize;
-                    mbar.Width = iconsize;
+                    //mbar.Width = iconsize;
                     mbar.Height = Double.NaN;
                 }
             }catch {}
+            if (blr != null) {
+                try {
+                    blr.Topmost = Topmost;
+                    blr.Height = this.Height;
+                    blr.Width = dockitems.ActualWidth;
+                    Point position = apsb.PointToScreen(new Point(0d, 0d));
+                    blr.Top = Top;
+                    blr.Left = position.X;
+                }catch {}
+            }
         };
         AnimationTicker.Start();
-        loadsettings();
+    }
+    internal void EnableBlur(Window win)
+    {
+        var windowHelper = new WindowInteropHelper(win);
         
+        var accent = new AccentPolicy();
+        var accentStructSize = Marshal.SizeOf(accent);
+        accent.AccentState = AccentState.ACCENT_ENABLE_BLURBEHIND;
+        
+        var accentPtr = Marshal.AllocHGlobal(accentStructSize);
+        Marshal.StructureToPtr(accent, accentPtr, false);
+        
+        var data = new WindowCompositionAttributeData();
+        data.Attribute = WindowCompositionAttribute.WCA_ACCENT_POLICY;
+        data.SizeOfData = accentStructSize;
+        data.Data = accentPtr;
+
+        SetWindowCompositionAttribute(windowHelper.Handle, ref data);
+        
+        Marshal.FreeHGlobal(accentPtr);
     }
 
     
@@ -584,14 +687,14 @@ public partial class MainWindow : Window
                 extra = App.settings.docktransformY;
             }
             if (App.settings.dockPosition == "Bottom") {
-                if (!App.settings.registerAsAppBar) Top = System.Windows.SystemParameters.WorkArea.Top + System.Windows.SystemParameters.WorkArea.Height - iconsize + extra + cpadd;//+ App.settings.docktransformY;
+                if (!App.settings.registerAsAppBar) Top = System.Windows.SystemParameters.WorkArea.Top + System.Windows.SystemParameters.WorkArea.Height - iconsize + extra + cpadd - (apsb.BorderThickness.Top + apsb.BorderThickness.Bottom);//+ App.settings.docktransformY;
             }
             if (App.settings.dockPosition == "Top") {
                 if (!App.settings.registerAsAppBar) Top = System.Windows.SystemParameters.WorkArea.Top + extra - cpadd;//+ App.settings.docktransformY;
             }
             if (!App.settings.registerAsAppBar) Left = System.Windows.SystemParameters.WorkArea.Left;
             if (!App.settings.registerAsAppBar) Width = System.Windows.SystemParameters.WorkArea.Width;
-            Height = iconsize + Math.Abs(App.settings.docktransformY);
+            Height = iconsize + Math.Abs(App.settings.docktransformY) + apsb.BorderThickness.Top + apsb.BorderThickness.Bottom;
             dockitems.Orientation = Orientation.Horizontal;
             dockiconsleft.Orientation = Orientation.Horizontal;
             dockiconsright.Orientation = Orientation.Horizontal;
@@ -617,14 +720,14 @@ public partial class MainWindow : Window
                 extra = App.settings.docktransformX;
             }
             if (App.settings.dockPosition == "Right") {
-                if (!App.settings.registerAsAppBar) Left = System.Windows.SystemParameters.WorkArea.Width + System.Windows.SystemParameters.WorkArea.Left - iconsize + extra + cpadd;// + App.settings.docktransformX;
+                if (!App.settings.registerAsAppBar) Left = System.Windows.SystemParameters.WorkArea.Width + System.Windows.SystemParameters.WorkArea.Left - iconsize + extra + cpadd - (apsb.BorderThickness.Left + apsb.BorderThickness.Right);// + App.settings.docktransformX;
             }
             if (App.settings.dockPosition == "Left") {
                 if (!App.settings.registerAsAppBar) Left = System.Windows.SystemParameters.WorkArea.Left + extra - cpadd; //+ App.settings.docktransformX;
             }
             if (!App.settings.registerAsAppBar) Top = System.Windows.SystemParameters.WorkArea.Top;
             if (!App.settings.registerAsAppBar) Height = System.Windows.SystemParameters.WorkArea.Height;
-            Width = iconsize + Math.Abs(App.settings.docktransformX);
+            Width = iconsize + Math.Abs(App.settings.docktransformX) + apsb.BorderThickness.Left + apsb.BorderThickness.Right;
             dockitems.Orientation = Orientation.Vertical;
             dockiconsleft.Orientation = Orientation.Vertical;
             dockiconsright.Orientation = Orientation.Vertical;
@@ -675,7 +778,7 @@ public partial class MainWindow : Window
     }
     Border createseparator() {
         Border sp = new();
-        sp.Background = new SolidColorBrush(App.getColor(App.settings.separatorColor) ?? Color.FromRgb(255,255,255));
+        sp.Background = new SolidColorBrush(App.getColor(App.styles["separatorColor"].ToString()) ?? Color.FromRgb(255,255,255));
         if (App.settings.dockPosition == "Top" || App.settings.dockPosition == "Bottom") {
             sp.Width = 1;
             //sp.Height = iconsize - 6;
@@ -684,19 +787,54 @@ public partial class MainWindow : Window
             //sp.Width = iconsize - 6;
         }
         sp.Margin = new Thickness(3);
-        if (styles.ContainsKey("separator")) {
+        if (App.styles.ContainsKey("separator")) {
             //Console.WriteLine("apply separator style...");
-            applyStyle(sp, (JObject)styles["separator"]);
+            applyStyle(sp, (JObject)App.styles["separator"]);
         }
         return sp;
     }
 
     void loadsettings() {
+        foreach (object x in dockitems.Children) {
+            if (x is StackPanel) {
+                var sp = (StackPanel)x;
+                sp.Width = double.NaN;
+                sp.Height = double.NaN;
+            }
+        }
+
+        try {
+            var s = JsonConvert.DeserializeObject<Dictionary<string, Object>>(File.ReadAllText(App.settings.stylesPath));
+            if (s != null) {
+                App.styles = s;
+                
+            }
+        }catch {
+
+        }
+        
+        if (!App.styles.ContainsKey("separatorColor")) {
+            App.styles["separatorColor"] = "#FFFFFF";
+        }
+        if (!App.styles.ContainsKey("activeAppColor")) {
+            App.styles["activeAppColor"] = "ACCENT";
+        }
+        if (!App.styles.ContainsKey("dockButtonStyleToUse")) {
+            App.styles["dockButtonStyleToUse"] = "asbs";
+        }
+        if (!App.styles.ContainsKey("submenuButtonStyleToUse")) {
+            App.styles["submenuButtonStyleToUse"] = "asbs";
+        }
+        if (!App.styles.ContainsKey("submenuForeground")) {
+            App.styles["submenuForeground"] = "#000000";
+        }
+
         iconsize = App.settings.iconSize;
         Topmost = App.settings.topmost;
-        apsb.CornerRadius = App.getCornerRadius(App.settings.dockBorderRadius) ?? new CornerRadius(iconsize / 2);
-        apsb.Background = new SolidColorBrush(App.getColor(App.settings.dockColor) ?? Color.FromRgb(0,0,0));
-        activecolor = new SolidColorBrush(App.getColor(App.settings.activeAppColor) ?? Color.FromRgb(0,0,0));
+        if (App.styles.ContainsKey("dockBorder")) {
+            applyStyle(apsb, (JObject)App.styles["dockBorder"]);
+        }
+        activecolor = new SolidColorBrush(App.getColor(App.styles["activeAppColor"].ToString()) ?? Color.FromRgb(0,0,0));
         foreach (object x in dockitems.Children) {
             if (x is StackPanel) {
                 var sp = (StackPanel)x;
@@ -733,8 +871,10 @@ public partial class MainWindow : Window
                                 apdw.Close();
                                 apdw = null;
                             }else {
+                                focusblur = false;
                                 apdw = new appsdrawerWindow(this);
                                 apdw.Show();
+                                focusblur = false;
                             }
                         }else {
                             if (apdw != null) {
@@ -870,13 +1010,28 @@ public partial class MainWindow : Window
                                 Console.WriteLine("Foreground!! " + windows[fgw]);
                                 btn.hd = fgw;
                                 btn.updatedata(windows[fgw], placement.showCmd != 2);
-                                try {
-                                    var mdl = prc.MainModule;
-                                    if (mdl != null) {
-                                        var ico = GetAppIcon(fgw) ?? App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined);
-                                        if (ico != null) btn.updateicon(ico);
-                                    }
-                                }catch {}
+                                if (!btn.uwpapp) {
+                                    try {
+                                        var mdl = prc.MainModule;
+                                        if (mdl != null) {
+                                            var ico = GetAppIcon(fgw);
+                                            if (ico == null) {
+                                                var app = App.AppxPackage.FromWindow(fgw);
+                                                if (app != null) {
+                                                    var path = app.FindHighestScaleQualifiedImagePath(app.ResourceId);
+                                                    ico = new BitmapImage(new Uri(path));
+                                                    btn.uwpapp = true;
+                                                }else {
+                                                    //MessageBox.Show("its null");
+                                                }
+                                            }
+                                            if (ico == null) {
+                                                ico = App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined);
+                                            }
+                                            if (ico != null) btn.updateicon(ico);
+                                        }
+                                    }catch {}
+                                }
                             }else {
                                 btn.hd = window.Key;
                                 btn.updatedata(window.Value, (btn.hwnds.Contains(fgw) && placement.showCmd != 2));
@@ -959,10 +1114,20 @@ public partial class MainWindow : Window
         
         if (t is Control) {
             var target = (Control)t;
-            if (style.ContainsKey("backgroundColor")) {
-                var clr = App.getColor((style["backgroundColor"] ?? "").ToString() ?? "");
-                if (clr != null)
-                target.Background = new SolidColorBrush((Color)clr);
+            if (style.ContainsKey("background")) {
+                //var clr = App.getColor((style["background"] ?? "").ToString() ?? "");
+                //if (clr != null)
+                target.Background = App.getBrush(style["background"]);
+            }
+            if (style.ContainsKey("borderThickness")) {
+                var thick = App.getThick((style["borderThickness"] ?? "").ToString() ?? "");
+                if (thick != null)
+                target.BorderThickness = (Thickness)thick;
+            }
+            if (style.ContainsKey("borderBrush")) {
+                //var clr = App.getColor((style["borderBrush"] ?? "").ToString() ?? "");
+                //if (clr != null)
+                target.BorderBrush = App.getBrush(style["borderBrush"]);
             }
             if (style.ContainsKey("margin")) {
                 var thick = App.getThick((style["margin"] ?? "").ToString() ?? "");
@@ -976,12 +1141,14 @@ public partial class MainWindow : Window
             }
             if (style.ContainsKey("width")) {
                 if (style["width"] != null) {
-                    target.Width = (int)style["width"];
+                    var dob = App.getDouble(style["width"].ToString());
+                    if (dob != null) target.Width = (double)dob;
                 }
             }
             if (style.ContainsKey("height")) {
                 if (style["height"] != null) {
-                    target.Height = (int)style["height"];
+                    var dob = App.getDouble(style["height"].ToString());
+                    if (dob != null) target.Height = (double)dob;
                 }
             }
             if (style.ContainsKey("maxWidth")) {
@@ -1007,10 +1174,20 @@ public partial class MainWindow : Window
         }
         if (t is Border) {
             var target = (Border)t;
-            if (style.ContainsKey("backgroundColor")) {
-                var clr = App.getColor((style["backgroundColor"] ?? "").ToString() ?? "");
-                if (clr != null)
-                target.Background = new SolidColorBrush((Color)clr);
+            if (style.ContainsKey("background")) {
+                //var clr = App.getColor((style["background"] ?? "").ToString() ?? "");
+                //if (clr != null)
+                target.Background = App.getBrush(style["background"]);
+            }
+            if (style.ContainsKey("borderThickness")) {
+                var thick = App.getThick((style["borderThickness"] ?? "").ToString() ?? "");
+                if (thick != null)
+                target.BorderThickness = (Thickness)thick;
+            }
+            if (style.ContainsKey("borderBrush")) {
+                //var clr = App.getColor((style["borderBrush"] ?? "").ToString() ?? "");
+                //if (clr != null)
+                target.BorderBrush = App.getBrush(style["borderBrush"]);
             }
             if (style.ContainsKey("margin")) {
                 var thick = App.getThick((style["margin"] ?? "").ToString() ?? "");
@@ -1029,12 +1206,14 @@ public partial class MainWindow : Window
             }
             if (style.ContainsKey("width")) {
                 if (style["width"] != null) {
-                    target.Width = (int)style["width"];
+                    var dob = App.getDouble(style["width"].ToString());
+                    if (dob != null) target.Width = (double)dob;
                 }
             }
             if (style.ContainsKey("height")) {
                 if (style["height"] != null) {
-                    target.Height = (int)style["height"];
+                    var dob = App.getDouble(style["height"].ToString());
+                    if (dob != null) target.Height = (double)dob;
                 }
             }
             if (style.ContainsKey("maxWidth")) {
@@ -1089,6 +1268,7 @@ public partial class MainWindow : Window
         public List<HWND> hwnds = new();
         public string key = "";
         public HWND hd = 0;
+        public bool uwpapp = false;
         public void updatedata(string title, bool active = false) {
             btntip.Content = title;
             activ = active;
@@ -1115,11 +1295,13 @@ public partial class MainWindow : Window
             spinnerscroll.Content = spinner;
             Border spinnercont = new()
             {
-                Background = new SolidColorBrush(App.getColor(App.settings.submenuBackground) ?? Color.FromRgb(255,255,255)),
-                CornerRadius = App.getCornerRadius(App.settings.submenuCornerRadius) ?? new CornerRadius(8),
+                Background = new SolidColorBrush(Color.FromRgb(255,255,255)),
+                CornerRadius = new CornerRadius(8),
                 Child = spinnerscroll
             };
-            
+            if (App.styles.ContainsKey("submenuBorder")) {
+                applyStyle(spinnercont, (JObject)App.styles["submenuBorder"]);
+            }
             spinnerpopup.Child = spinnercont;
             spinnerpopup.StaysOpen = false;
             spinnerpopup.Margin = new Thickness(iconsize);
@@ -1138,7 +1320,7 @@ public partial class MainWindow : Window
             btn.ContextMenu = ctx;
             
             btn.ToolTip = btntip;
-            try{btn.Style = (Style)Application.Current.Resources[App.settings.dockButtonStyleToUse];}catch{}
+            try{btn.Style = (Style)Application.Current.Resources[App.styles["dockButtonStyleToUse"].ToString()];}catch{}
             if (hd != 0) {
                 btn.Click += (e,a) => {
                     if (hwnds.Count > 1) {
@@ -1156,8 +1338,8 @@ public partial class MainWindow : Window
                 };
             }
             hwnds.Add(hd);
-            if (styles.ContainsKey("dockButton")) {
-                applyStyle(btn, (JObject)styles["dockButton"]);
+            if (App.styles.ContainsKey("dockButton")) {
+                applyStyle(btn, (JObject)App.styles["dockButton"]);
             }
         }
     }
@@ -1166,7 +1348,7 @@ public partial class MainWindow : Window
         ToolTip btntip = new();
         public Button btn = new() {BorderThickness = new Thickness(0),Background = Brushes.Transparent, Height = iconsize};
         public Image ico = new() {Width = iconsize / 2, Height = iconsize / 2,Margin = new Thickness(iconsize / 8),Stretch = Stretch.Uniform,VerticalAlignment = VerticalAlignment.Center};
-        public TextBlock name = new() {VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(12), Foreground = new SolidColorBrush(App.getColor(App.settings.submenuForeground) ?? Color.FromRgb(255,255,255)),TextTrimming = TextTrimming.CharacterEllipsis};
+        public TextBlock name = new() {VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(12), Foreground = new SolidColorBrush(App.getColor(App.styles["submenuForeground"].ToString()) ?? Color.FromRgb(255,255,255)),TextTrimming = TextTrimming.CharacterEllipsis};
         bool activ = false;
         public void updatedata(string title, bool active = false) {
             name.Text = title;
@@ -1193,7 +1375,7 @@ public partial class MainWindow : Window
                 sp.Children.Add(name);
             }
             btn.Content = sp;
-            try {btn.Style = (Style)Application.Current.Resources[App.settings.submenuButtonStyleToUse];}catch {}
+            try {btn.Style = (Style)Application.Current.Resources[App.styles["submenuButtonStyleToUse"].ToString()];}catch {}
             if (hd != 0) {
                 btn.MouseDown += (a,e) => {
                     if (e.ChangedButton == MouseButton.Middle && e.ButtonState == MouseButtonState.Pressed) {
@@ -1210,8 +1392,8 @@ public partial class MainWindow : Window
                     }
                 };
             }
-            if (styles.ContainsKey("dockInnerButton")) {
-                applyStyle(btn, (JObject)styles["dockInnerButton"]);
+            if (App.styles.ContainsKey("dockInnerButton")) {
+                applyStyle(btn, (JObject)App.styles["dockInnerButton"]);
             }
         }
     }

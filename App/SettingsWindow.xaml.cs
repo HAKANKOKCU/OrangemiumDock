@@ -81,28 +81,14 @@ public partial class SettingsWindow : Window
                     break;
             }
         };
-        dockcolorTB.Text = settings.dockColor;
-        dockcolorTB.TextChanged += (a,e) => {
-            settings.dockColor = dockcolorTB.Text;
-        };
-        dockradiusTB.Text = settings.dockBorderRadius;
-        dockradiusTB.TextChanged += (a,e) => {
-            settings.dockBorderRadius = dockradiusTB.Text;
-        };
-        sepcolorTB.Text = settings.separatorColor;
-        sepcolorTB.TextChanged += (a,e) => {
-            settings.separatorColor = sepcolorTB.Text;
-        };
+        
         tickinvTB.Text = settings.tickerInterval.ToString();
         tickinvTB.TextChanged += (a,e) => {
             try {
                 settings.tickerInterval = int.Parse(tickinvTB.Text);
             }catch {}
         };
-        actcolorTB.Text = settings.activeAppColor;
-        actcolorTB.TextChanged += (a,e) => {
-            settings.activeAppColor = actcolorTB.Text;
-        };
+        
         topmostCB.IsChecked = settings.topmost;
         topmostCB.Checked += (e,a) => {settings.topmost = true;};
         topmostCB.Unchecked += (e,a) => {settings.topmost = false;};
@@ -145,14 +131,7 @@ public partial class SettingsWindow : Window
         adbb.IsChecked = settings.enableAppsDrawerBlur;
         adbb.Checked += (e,a) => {settings.enableAppsDrawerBlur = true;};
         adbb.Unchecked += (e,a) => {settings.enableAppsDrawerBlur = false;};
-        dbs.Text = settings.dockButtonStyleToUse;
-        dbs.TextChanged += (a,e) => {
-            settings.dockButtonStyleToUse = dbs.Text;
-        };
-        dbsub.Text = settings.submenuButtonStyleToUse;
-        dbsub.TextChanged += (a,e) => {
-            settings.submenuButtonStyleToUse = dbsub.Text;
-        };
+        
         uis.IsChecked = settings.useIconsInSubmenus;
         uis.Checked += (e,a) => {settings.useIconsInSubmenus = true;};
         uis.Unchecked += (e,a) => {settings.useIconsInSubmenus = false;};
@@ -162,5 +141,20 @@ public partial class SettingsWindow : Window
         udat.IsChecked = settings.registerAsAppBar;
         udat.Checked += (e,a) => {settings.registerAsAppBar = true;};
         udat.Unchecked += (e,a) => {settings.registerAsAppBar = false;};
+
+        stylepathTB.Text = settings.stylesPath;
+        stylepathTB.TextChanged += (a,e) => {
+            try {
+                settings.stylesPath = stylepathTB.Text;
+            }catch {}
+        };
+        stylepathTB.PreviewDragOver += (a,e) => {e.Handled = true;};
+        stylepathTB.Drop += (object sender, DragEventArgs e) => {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                stylepathTB.Text = files[0];
+            }
+        };
     }
 }
