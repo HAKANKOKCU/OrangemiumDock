@@ -1,0 +1,62 @@
+{
+	"separatorColor":"ACCENT",
+	"dockButtonStyleToUse":"asbsLight",
+	"submenuButtonStyleToUse":"asbsLight",
+	"submenuForeground":"#FFFFFF",
+	
+	
+	"dockBorder": {
+		"cornerRadius":"24,24,0,0|0,0,24,24|0,24,24,0|24,0,0,24",
+		"background":{
+			"type":"LinearGraidentBrush",
+			"stops": [
+				{
+					"color":"#64000000",
+					"offset":1
+				},
+				{
+					"color":"#20000000",
+					"offset":0
+				}
+			],
+			"startPoint":"0.5,0",
+			"endPoint":"0.5,1"
+		},
+		"borderThickness":"1,1,1,0|1,0,1,1|0,1,1,1|1,1,0,1",
+		"borderBrush":{
+			"type":"LinearGraidentBrush",
+			"stops": [
+				{
+					"color":"#64000000",
+					"offset":1
+				},
+				{
+					"color":"#30000000",
+					"offset":0
+				}
+			],
+			"startPoint":"0.5,0",
+			"endPoint":"0.5,1"
+		}
+	},
+	"submenuBorder": {
+		"cornerRadius":"24",
+		"background":"#F5000000",
+		"borderThickness":"1",
+		"borderBrush":"#212121"
+	},
+	"dockButton": {
+		"background":"#000000",
+		"margin":"0",
+		"padding":"0"
+	},
+	"separator": {
+		"padding":"1",
+		"width":"3|3|NULL|NULL",
+		"height":"NULL|NULL|3|3",
+		"cornerRadius":"2"
+	},
+	"dockInnerButton": {
+		"maxWidth": 300
+	}
+}
