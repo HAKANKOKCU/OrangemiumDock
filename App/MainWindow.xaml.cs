@@ -181,13 +181,13 @@ public partial class MainWindow : Window
 
     public ImageSource? GetAppIcon(IntPtr hwnd)
     {
-        IntPtr iconHandle = SendMessage(hwnd,WM_GETICON,ICON_BIG,0);
+        IntPtr iconHandle =  SendMessage(hwnd,WM_GETICON,ICON_BIG,0);
         if(iconHandle == IntPtr.Zero)
             iconHandle = SendMessage(hwnd,WM_GETICON,ICON_SMALL,0);
     
         if(iconHandle == IntPtr.Zero)
             iconHandle = SendMessage(hwnd,WM_GETICON,ICON_SMALL2,0);
-    
+        
         if (iconHandle == IntPtr.Zero)
             iconHandle = GetClassLongPtr(hwnd, GCL_HICON);
         if (iconHandle == IntPtr.Zero)
@@ -195,11 +195,13 @@ public partial class MainWindow : Window
     
         if(iconHandle == IntPtr.Zero)
             return null;
+        //Console.WriteLine("AICONHANDLE" + iconHandle);
         try {
             ImageSource icn = Imaging.CreateBitmapSourceFromHIcon(
                         iconHandle,
                         Int32Rect.Empty,
                         BitmapSizeOptions.FromEmptyOptions());
+            icn.Freeze();
             return icn;
         }catch {return null;}
     }
@@ -230,41 +232,7 @@ public partial class MainWindow : Window
     }
     [DllImport("user32.dll")]
     static extern bool SetForegroundWindow (IntPtr hWnd);
-    [DllImport("user32.dll")]
-    internal static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct WindowCompositionAttributeData
-    {
-        public WindowCompositionAttribute Attribute;
-        public IntPtr Data;
-        public int SizeOfData;
-    }
-
-    internal enum WindowCompositionAttribute
-    {
-        // ...
-        WCA_ACCENT_POLICY = 19
-        // ...
-    }
-
-    internal enum AccentState
-    {
-        ACCENT_DISABLED = 0,
-        ACCENT_ENABLE_GRADIENT = 1,
-        ACCENT_ENABLE_TRANSPARENTGRADIENT = 2,
-        ACCENT_ENABLE_BLURBEHIND = 3,
-        ACCENT_INVALID_STATE = 4
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct AccentPolicy
-    {
-        public AccentState AccentState;
-        public int AccentFlags;
-        public int GradientColor;
-        public int AnimationId;
-    }
+    
 
     List<IntPtr> wins = new();
     static Dictionary<IntPtr,List<object>> appics = new();
@@ -345,7 +313,7 @@ public partial class MainWindow : Window
             repos();
             appbar();
             if (App.settings.blurDock == "Area") {
-                EnableBlur(this);
+                App.EnableBlur(this);
             }else if (App.settings.blurDock == "DockOnly") {
                 blr = new();
                 blr.WindowStyle = WindowStyle.None;
@@ -356,7 +324,7 @@ public partial class MainWindow : Window
                 
                 blr.Activated += (e,a) => {blrf();};
                 blr.Loaded += (e,a) => {
-                    EnableBlur(blr);
+                    App.EnableBlur(blr);
                     WindowInteropHelper wndHelper = new WindowInteropHelper(blr);
 
                     int exStyle = (int)GetWindowLong(wndHelper.Handle, (int)GetWindowLongFields.GWL_EXSTYLE);
@@ -461,6 +429,7 @@ public partial class MainWindow : Window
 
         DispatcherTimer AnimationTicker = new() {Interval = TimeSpan.FromMilliseconds(1)};
         DispatcherTimer dt = new() {Interval = TimeSpan.FromMilliseconds(App.settings.tickerInterval)};
+        int cnt = 0;
         dt.Tick += (e,a) => {
             HWND fg = GetForegroundWindow();
             if (fg != tbh) {
@@ -501,7 +470,7 @@ public partial class MainWindow : Window
             }
             
             repos();
-            
+            if (++cnt % 200 == 0) {Console.WriteLine("Collecting Garbage!!");GC.Collect();}
         };
         dt.Start();
         
@@ -656,26 +625,7 @@ public partial class MainWindow : Window
         };
         AnimationTicker.Start();
     }
-    internal void EnableBlur(Window win)
-    {
-        var windowHelper = new WindowInteropHelper(win);
-        
-        var accent = new AccentPolicy();
-        var accentStructSize = Marshal.SizeOf(accent);
-        accent.AccentState = AccentState.ACCENT_ENABLE_BLURBEHIND;
-        
-        var accentPtr = Marshal.AllocHGlobal(accentStructSize);
-        Marshal.StructureToPtr(accent, accentPtr, false);
-        
-        var data = new WindowCompositionAttributeData();
-        data.Attribute = WindowCompositionAttribute.WCA_ACCENT_POLICY;
-        data.SizeOfData = accentStructSize;
-        data.Data = accentPtr;
-
-        SetWindowCompositionAttribute(windowHelper.Handle, ref data);
-        
-        Marshal.FreeHGlobal(accentPtr);
-    }
+    
 
     
     bool appbarregistered = true;
@@ -890,8 +840,16 @@ public partial class MainWindow : Window
                     
                 };
                 try {
-                    BitmapImage bitmap = new(new Uri(ico.icon));
-                    btn.updateicon(bitmap);
+                    new Thread(() => {
+                        try {
+                            BitmapImage bitmap = new(new Uri(ico.icon));
+                            
+                            bitmap.Freeze();
+                            Application.Current.Dispatcher.Invoke(new Action(() => {btn.updateicon(bitmap);}));
+                        }catch {} 
+                    }).Start();
+                    
+                    
                 }catch {}
                 btn.ctx.Items.Add(new Separator());
                 MenuItem edititm = new() {Header = "Edit..."};
@@ -910,33 +868,83 @@ public partial class MainWindow : Window
         File.WriteAllText(settingspath,JsonConvert.SerializeObject(App.settings));
     }
 
+    Dictionary<HWND,List<object>> objs = new();
+    //Dictionary<HWND,bool> busy = new();
+    void getappiconinto(object btn, HWND key, Process prc) {
+        //if (!busy.ContainsKey(key)) {busy[key] = false;}
+        if (!objs.ContainsKey(key)) {
+            objs[key] = new List<object>();
+            //if (!busy[key])
+            new Thread(() => {
+                //busy[key] = true;
+                var ico = GetAppIcon(key);
+                if (ico == null) {
+                    try {
+                        var mdl = prc.MainModule;
+                        if (mdl != null) {
+                            
+                            var app = App.AppxPackage.FromWindow(key);
+                            if (app != null) {
+                                var path = app.FindHighestScaleQualifiedImagePath(app.ResourceId);
+                                if (path != null) ico = new BitmapImage(new Uri(path));
+                            }else {
+                                //MessageBox.Show("its null");
+                            }
+                            
+                            if (ico == null) {
+                                ico = App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined);
+                            }
+                        }
+                    }catch {}
+                }
+                //busy[key] = false;
+                if (ico != null) {
+                    ico.Freeze();
+                    Application.Current.Dispatcher.Invoke(new Action(() => {
+                        foreach (object obj in objs[key]) {
+                            if (obj is dockButton) {
+                                var butn = (dockButton)obj;
+                                butn.updateicon(ico);
+                            }
+                            if (obj is dockInnerButton) {
+                                var butn = (dockInnerButton)obj;
+                                butn.updateicon(ico);
+                            }
+                        }
+                        objs.Remove(key);
+                    }));
+                    
+                }else {objs.Remove(key);}
+            }).Start();
+        }
+        objs[key].Add(btn);
+    }
 
-    async void refreshtasklist() {
+
+    void refreshtasklist() {
         if (App.settings.automaticSeparatorAtRunningApps && rapsep == null) rapsep = createseparator();
+        Console.WriteLine("Getting Windows");
         IDictionary<HWND,string> windows = GetOpenWindows();
-        List<object> editedButtons = new();
+        //List<object> editedButtons = new();
         foreach(KeyValuePair<IntPtr, string> window in windows)
         {
+            Console.WriteLine(window.Key);
             if (hwnd != window.Key) {
                 UInt32 pid;
+                Console.WriteLine("Getting Process");
                 GetWindowThreadProcessId(window.Key,out pid);
                 Process prc = Process.GetProcessById((int)pid);
                 bool include = true;
-                bool processResponding = false;
                 if (!wins.Contains(window.Key)) {
                     try {
-                        var task = Task.Factory.StartNew(() => prc.Responding);
-
-                        processResponding = await task.WaitAsync(TimeSpan.FromSeconds(1)) && task.Result;
-                        if (processResponding) {
-                            if (pid == Process.GetCurrentProcess().Id) include = false;
-                            var module = prc.MainModule;
-                            if (module != null) {
-                                if (App.settings.iconBlacklist.Contains(module.FileName) || App.settings.iconBlacklist.Contains(Path.GetFileName(module.FileName))) {
-                                    include = false;
-                                }
+                        if (pid == Process.GetCurrentProcess().Id) include = false;
+                        var module = prc.MainModule;
+                        if (module != null) {
+                            if (App.settings.iconBlacklist.Contains(module.FileName) || App.settings.iconBlacklist.Contains(Path.GetFileName(module.FileName))) {
+                                include = false;
                             }
-                        }else {}
+                        }
+                        
                     }catch {}
                 }else {include = false;}
                 if (include && !appics.ContainsKey(window.Key)) {
@@ -998,62 +1006,37 @@ public partial class MainWindow : Window
                 
                     
                 }
+                Console.WriteLine("Updating etc..");
                 if (appics.ContainsKey(window.Key)) {
                     var l = appics[window.Key];
                     WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
-                    GetWindowPlacement(fgw, ref placement);
+                    GetWindowPlacement(window.Key, ref placement);
                     foreach (object x in l) {
                         if (x is dockButton) {
                             var btn = (dockButton)x;
-                            Console.WriteLine("dock button");
+                            //Console.WriteLine("dock button");
                             if (btn.hwnds.Contains(fgw) && windows.ContainsKey(fgw)) {
                                 Console.WriteLine("Foreground!! " + windows[fgw]);
                                 btn.hd = fgw;
                                 btn.updatedata(windows[fgw], placement.showCmd != 2);
-                                if (!btn.uwpapp) {
-                                    try {
-                                        var mdl = prc.MainModule;
-                                        if (mdl != null) {
-                                            var ico = GetAppIcon(fgw);
-                                            if (ico == null) {
-                                                var app = App.AppxPackage.FromWindow(fgw);
-                                                if (app != null) {
-                                                    var path = app.FindHighestScaleQualifiedImagePath(app.ResourceId);
-                                                    ico = new BitmapImage(new Uri(path));
-                                                    btn.uwpapp = true;
-                                                }else {
-                                                    //MessageBox.Show("its null");
-                                                }
-                                            }
-                                            if (ico == null) {
-                                                ico = App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined);
-                                            }
-                                            if (ico != null) btn.updateicon(ico);
-                                        }
-                                    }catch {}
-                                }
                             }else {
                                 btn.hd = window.Key;
                                 btn.updatedata(window.Value, (btn.hwnds.Contains(fgw) && placement.showCmd != 2));
-                                try {
-                                    var mdl = prc.MainModule;
-                                    if (mdl != null) {
-                                        var ico = GetAppIcon(window.Key) ?? App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined);
-                                        if (ico != null) btn.updateicon(ico);
-                                    }
-                                }catch {}
                             }
-                            
+                            getappiconinto(btn,btn.hd,prc);
                         }else if (x is dockInnerButton) { // && !editedButtons.Contains(x)
-                            Console.WriteLine("dock inner button");
+                            //Console.WriteLine("dock inner button");
                             var btn = (dockInnerButton)x;
                             btn.updatedata(window.Value, (fgw == window.Key && placement.showCmd != 2));
-                            var ico = GetAppIcon(window.Key);
-                            if (ico != null) btn.updateicon(ico);
+                            getappiconinto(btn,window.Key,prc);
                         }
-                        editedButtons.Add(x);
+                        //editedButtons.Add(x);
                     }
-                }else {Console.WriteLine("App icon not found!!!");}
+                    
+                    
+                }else {
+                    //Console.WriteLine("App icon not found!!!");
+                }
             }
         }
         List<HWND> rmdw = new();
@@ -1268,7 +1251,7 @@ public partial class MainWindow : Window
         public List<HWND> hwnds = new();
         public string key = "";
         public HWND hd = 0;
-        public bool uwpapp = false;
+        public bool staticicon = false;
         public void updatedata(string title, bool active = false) {
             btntip.Content = title;
             activ = active;
@@ -1346,7 +1329,7 @@ public partial class MainWindow : Window
     public class dockInnerButton {
         public dockButton parentdb;
         ToolTip btntip = new();
-        public Button btn = new() {BorderThickness = new Thickness(0),Background = Brushes.Transparent, Height = iconsize};
+        public Button btn = new() {BorderThickness = new Thickness(0),Background = Brushes.Transparent, Height = iconsize,HorizontalContentAlignment = HorizontalAlignment.Stretch};
         public Image ico = new() {Width = iconsize / 2, Height = iconsize / 2,Margin = new Thickness(iconsize / 8),Stretch = Stretch.Uniform,VerticalAlignment = VerticalAlignment.Center};
         public TextBlock name = new() {VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(12), Foreground = new SolidColorBrush(App.getColor(App.styles["submenuForeground"].ToString()) ?? Color.FromRgb(255,255,255)),TextTrimming = TextTrimming.CharacterEllipsis};
         bool activ = false;
@@ -1365,7 +1348,7 @@ public partial class MainWindow : Window
         }
         public dockInnerButton(dockButton parent,HWND hd = 0) {
             parentdb = parent;
-            DockPanel sp = new() {HorizontalAlignment = HorizontalAlignment.Left};
+            DockPanel sp = new();
             sp.Children.Add(ico);
             if (App.settings.useIconsInSubmenus) {
                 btn.Width = App.settings.iconSize;

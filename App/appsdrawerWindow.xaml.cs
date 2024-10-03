@@ -23,61 +23,6 @@ namespace OrangemiumDock;
 /// </summary>
 public partial class appsdrawerWindow : Window
 {
-    [DllImport("user32.dll")]
-    internal static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct WindowCompositionAttributeData
-    {
-        public WindowCompositionAttribute Attribute;
-        public IntPtr Data;
-        public int SizeOfData;
-    }
-
-    internal enum WindowCompositionAttribute
-    {
-        // ...
-        WCA_ACCENT_POLICY = 19
-        // ...
-    }
-
-    internal enum AccentState
-    {
-        ACCENT_DISABLED = 0,
-        ACCENT_ENABLE_GRADIENT = 1,
-        ACCENT_ENABLE_TRANSPARENTGRADIENT = 2,
-        ACCENT_ENABLE_BLURBEHIND = 3,
-        ACCENT_INVALID_STATE = 4
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct AccentPolicy
-    {
-        public AccentState AccentState;
-        public int AccentFlags;
-        public int GradientColor;
-        public int AnimationId;
-    }
-    internal void EnableBlur()
-    {
-        var windowHelper = new WindowInteropHelper(this);
-        
-        var accent = new AccentPolicy();
-        var accentStructSize = Marshal.SizeOf(accent);
-        accent.AccentState = AccentState.ACCENT_ENABLE_BLURBEHIND;
-        
-        var accentPtr = Marshal.AllocHGlobal(accentStructSize);
-        Marshal.StructureToPtr(accent, accentPtr, false);
-        
-        var data = new WindowCompositionAttributeData();
-        data.Attribute = WindowCompositionAttribute.WCA_ACCENT_POLICY;
-        data.SizeOfData = accentStructSize;
-        data.Data = accentPtr;
-
-        SetWindowCompositionAttribute(windowHelper.Handle, ref data);
-        
-        Marshal.FreeHGlobal(accentPtr);
-    }
     App.settingsDataType settings;
     List<Thread> threads = new();
     Dictionary<string,BitmapSource> iconcache = new();
@@ -144,7 +89,7 @@ public partial class appsdrawerWindow : Window
                 mdp.Margin = new Thickness(0);
             }
         };
-        Loaded += (e,a) => {Activate();if (App.settings.enableAppsDrawerBlur) EnableBlur();mtb.Focus();Deactivated += (e,a) => {if (ignorefirst) return; try {Close();}catch{}};};
+        Loaded += (e,a) => {Activate();if (App.settings.enableAppsDrawerBlur) App.EnableBlur(this);mtb.Focus();Deactivated += (e,a) => {if (ignorefirst) return; try {Close();}catch{}};};
         reloadlist();
         mtb.TextChanged += (e,a) => {reloadlist();};
     }
@@ -193,7 +138,7 @@ public partial class appsdrawerWindow : Window
                     string extension = Path.GetExtension(file).ToLower();
                     string name = Path.GetFileName(file).Replace(extension,"").ToLower();
                     if ((extension == ".lnk" || extension == ".exe") && name.Contains(filter.ToLower()) && ((!name.Contains("uninstall") && !name.Contains("readme")) || name.Contains("tool"))) {
-                        Button btn = new();
+                        Button btn = new() {HorizontalContentAlignment = HorizontalAlignment.Stretch};
                         if (App.settings.appsDrawerItemStyle == "Grid") {
                             btn.Width = 124;
                             btn.Height = 124;
@@ -212,7 +157,8 @@ public partial class appsdrawerWindow : Window
                             img.Width = 40;
                             img.Height = 40;
                         }else {
-                            btns = new Canvas();
+                            btns = new DockPanel();
+                            //btns.Width = 296;
                             img.Margin = new Thickness(8,0,8,0);
                             img.Width = 28;
                             img.Height = 28;
@@ -236,8 +182,7 @@ public partial class appsdrawerWindow : Window
                         if (App.settings.appsDrawerItemStyle == "Grid") {
 
                         }else {
-                            lbl.MaxWidth = 288;
-                            Canvas.SetLeft(lbl,40);
+                            //lbl.MaxWidth = 288;
                             //lbl.Margin = new Thickness(40,0,8,0);;
                         }
                         btns.Children.Add(lbl);
