@@ -23,6 +23,12 @@ OrangemiumDock (originally Budgie Dock) is a dock for your Windows desktop.
 | Load Speed | Slower | Faster |
 | Accent Color | Orange | Follows your accent color |
 | OS Support | Windows XP+ (Better) | Windows 10+ |
+## Styling
+BDock was using styles inside settings, which was worser. Now it's in it's own file and more customizeable.
+## Multitasking
+Normally BDock wasn't even supposed to show icons and was added later on. It was buggy...
+### Icons
+If explaination at the table was too complicated, this would be more complicated so...
 # How can I compile myself?
 * Download the [/App](https://github.com/HAKANKOKCU/OrangemiumDock/tree/main/App) directory. using dotnet CLI or Visual Studio should work fine.
 # Contributing
