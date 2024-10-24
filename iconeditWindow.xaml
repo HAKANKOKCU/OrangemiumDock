@@ -1,0 +1,23 @@
+﻿<Window x:Class="OrangemiumDock.iconeditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:OrangemiumDock"
+        mc:Ignorable="d"
+        Title="Edit Icon" Height="450" Width="800" WindowStartupLocation="CenterScreen">
+    <ScrollViewer>
+        <StackPanel Name="settingsList">
+            <StackPanel Orientation="Horizontal" Background="{x:Static SystemParameters.WindowGlassBrush}" Name="title">
+                <Label Foreground="White" FontSize="24">Edit Icon</Label>
+            </StackPanel>
+            <Label FontSize="14">Name</Label>
+            <TextBox Name="nameTB" Style="{StaticResource OTBox}"></TextBox>
+            <Label FontSize="14">Icon</Label>
+            <TextBox Name="iconTB" Style="{StaticResource OTBox}"></TextBox>
+            <Label FontSize="14">Target</Label>
+            <TextBox Name="targetTB" Style="{StaticResource OTBox}"></TextBox>
+            
+        </StackPanel>
+    </ScrollViewer>
+</Window>
