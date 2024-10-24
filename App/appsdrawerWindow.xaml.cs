@@ -24,11 +24,26 @@ namespace OrangemiumDock;
 public partial class appsdrawerWindow : Window
 {
     App.settingsDataType settings;
-    List<Thread> threads = new();
-    Dictionary<string,BitmapSource> iconcache = new();
+    Dictionary<string,Image> iconload = new();
+    Thread iconloader;
     public appsdrawerWindow(MainWindow window)
     {
-        bool ignorefirst = false;//App.settings.blurDock;
+        bool running = true;
+        iconloader = new Thread(() => {
+            while (running) {
+                foreach (var kvp in iconload) {
+                    var path = kvp.Key;
+                    var img = kvp.Value;
+                    var ico = App.GetIcon(path,App.IconSize.Large,App.ItemState.Undefined);
+                    if (ico != null) {
+                        ico.Freeze();
+                        Application.Current.Dispatcher.Invoke(new Action(() => {img.Source = ico;}));
+                    }
+                }
+                iconload.Clear();
+                Thread.Sleep(100);
+            }
+        });
         InitializeComponent();
         settings = App.settings;
         if (App.settings.appsDrawerTheme == "Dark") {
@@ -63,7 +78,7 @@ public partial class appsdrawerWindow : Window
         
        
         Closing += (e,a) => {
-            threads.Clear();
+            running = false;
             try {
                 mdp.Children.Remove(window.mtc);
                 window.Content = window.mtc;
@@ -89,33 +104,31 @@ public partial class appsdrawerWindow : Window
                 mdp.Margin = new Thickness(0);
             }
         };
-        Loaded += (e,a) => {Activate();if (App.settings.enableAppsDrawerBlur) App.EnableBlur(this);mtb.Focus();Deactivated += (e,a) => {if (ignorefirst) return; try {Close();}catch{}};};
+        
+        Loaded += (e,a) => {Activate();if (App.settings.enableAppsDrawerBlur) App.EnableBlur(this);mtb.Focus();Deactivated += (e,a) => {try {Close();}catch{}};};
+        dirs = Directory.GetDirectories(smpc).ToList();
+        foreach (string d in Directory.GetDirectories(smp)) {
+            dirs.Add(d);
+        }
+        
+        dirs.Insert(0, smpc);
+        dirs.Insert(0, smp);
         reloadlist();
         mtb.TextChanged += (e,a) => {reloadlist();};
+        iconloader.Start();
     }
+
+    List<string> dirs;
 
     string smp = Environment.GetFolderPath(Environment.SpecialFolder.Programs);
     string smpc = Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms);
 
-    void startnextthread() {
-        if (threads.Count > 0) {
-            Thread th = threads[0];
-            threads.RemoveAt(0);
-            if (!th.IsAlive) th.Start();
-        }
-    }
     void reloadlist(string? filter = null) {
-        threads.Clear();
+        sw.ScrollToHome();
         if (filter == null) filter = mtb.Text;
         wp.Children.Clear();
-        List<string> dirs = Directory.GetDirectories(smpc).ToList();
-        foreach (string d in Directory.GetDirectories(smp)) {
-            dirs.Add(d);
-        }
         Dictionary<string,WrapPanel> wpas = new();
         Dictionary<string,StackPanel> sps = new();
-        dirs.Insert(0, smpc);
-        dirs.Insert(0, smp);
         foreach (string dir in dirs) {
             try {
                 string[] fils = Directory.GetFiles(dir);
@@ -164,19 +177,13 @@ public partial class appsdrawerWindow : Window
                             img.Height = 28;
                         }
                         var path = file + ""; //remove reference
-                        if (iconcache.ContainsKey(path)) {
-                            img.Source = iconcache[path];
+                        
+                        if (App.iconcache.ContainsKey(path.ToLower())) {
+                            img.Source = App.iconcache[path.ToLower()];
                         }else {
-                            threads.Add(new Thread(() => {
-                                var ico = App.GetIcon(path,App.IconSize.Large,App.ItemState.Undefined);
-                                if (ico != null) {
-                                    ico.Freeze();
-                                    try {iconcache.Add(path,ico);}catch {}
-                                    Application.Current.Dispatcher.Invoke(new Action(() => {img.Source = ico;}));
-                                }
-                                startnextthread();
-                            }));
+                            iconload[path] = img;
                         }
+
                         btns.Children.Add(img);
                         TextBlock lbl = new() {Foreground = settings.appsDrawerTheme == "Dark" ? Brushes.White : Brushes.Black, TextAlignment = TextAlignment.Center,HorizontalAlignment = App.settings.appsDrawerItemStyle == "Grid" ? HorizontalAlignment.Center : HorizontalAlignment.Left, Text = Path.GetFileName(file).Replace(extension,""), TextWrapping = TextWrapping.Wrap,VerticalAlignment = VerticalAlignment.Center};
                         if (App.settings.appsDrawerItemStyle == "Grid") {
@@ -203,6 +210,6 @@ public partial class appsdrawerWindow : Window
                 
             }catch (Exception e) {Console.WriteLine(e);}
         }
-        startnextthread();
+        //if (!iconloader.IsAlive) iconloader.Start();
     }
 }

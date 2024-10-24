@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="Apps" WindowState="Maximized" WindowStyle="None" ShowInTaskbar="false" AllowsTransparency="true">
     <Grid Name="mdp" Margin="8">
-        <ScrollViewer Name="sw" VerticalScrollBarVisibility="Hidden">
+        <ScrollViewer Name="sw" VerticalScrollBarVisibility="Hidden" CanContentScroll="True" VirtualizingPanel.ScrollUnit="Pixel" PanningMode="Both">
             <WrapPanel Name="wp" HorizontalAlignment="Center"></WrapPanel>
         </ScrollViewer>
         <Border HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5" Background="Black" CornerRadius="16" Name="tb">

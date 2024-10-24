@@ -156,5 +156,23 @@ public partial class SettingsWindow : Window
                 stylepathTB.Text = files[0];
             }
         };
+        switch (settings.appsDrawerItemStyle) {
+            case "Grid":
+                adit.SelectedIndex = 0;
+                break;
+            default:
+                adit.SelectedIndex = 1;
+                break;
+        }
+        adit.SelectionChanged += (e,a) => {
+            switch (adit.SelectedIndex) {
+                case 0:
+                    settings.appsDrawerItemStyle = "Grid";
+                    break;
+                case 1:
+                    settings.appsDrawerItemStyle = "List";
+                    break;
+            }
+        };
     }
 }

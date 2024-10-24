@@ -127,6 +127,13 @@
             <TabItem Header="Apps Drawer">
                 <ScrollViewer>
                     <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Item Style</Label>
+                            <ComboBox Name="adit">
+                                <ComboBoxItem Content="Blocky" Style="{StaticResource OCIT}"></ComboBoxItem>
+                                <ComboBoxItem Content="List-Like" Style="{StaticResource OCIT}"></ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
                         <CheckBox Name="adbb">Blur Background</CheckBox>
                         <CheckBox Name="adwt">White Theme</CheckBox>
                     </StackPanel>
