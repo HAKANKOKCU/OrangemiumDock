@@ -55,7 +55,7 @@ public partial class SettingsWindow : Window
         }
         dockpos.SelectionChanged += (e,a) => {
             var cbi = (ComboBoxItem)dockpos.SelectedItem;
-            settings.dockPosition = cbi.Content.ToString();
+            settings.dockPosition = cbi.Content.ToString() ?? "Bottom";
         };
         switch (settings.groupRunningApps) {
             case "Executable":

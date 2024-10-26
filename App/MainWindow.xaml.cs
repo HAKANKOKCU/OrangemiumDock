@@ -90,6 +90,9 @@ public partial class MainWindow : Window
         public static extern void SetLastError(int dwErrorCode);
     #endregion
 
+    [DllImport("User32.dll", SetLastError = true)]
+    public static extern IntPtr GetParent(IntPtr hWnd);
+
     public static IDictionary<HWND, string> GetOpenWindows()
     {
         HWND shellWindow = GetShellWindow();
@@ -99,8 +102,7 @@ public partial class MainWindow : Window
         {
         if (hWnd == shellWindow) return true;
         if (!IsWindowVisible(hWnd)) return true;
-        //if (!HasOwnerWindow(hWnd)) return true;
-
+        if (GetParent(hWnd) != IntPtr.Zero) return true;
         int length = GetWindowTextLength(hWnd);
         if (length == 0) return true;
 
@@ -137,9 +139,6 @@ public partial class MainWindow : Window
 
   [DllImport("USER32.DLL")]
   private static extern bool IsWindowVisible(HWND hWnd);
-
-  //[DllImport("USER32.DLL")]
-  //private static extern bool HasOwnerWindow(HWND hWnd);
 
   [DllImport("USER32.DLL")]
   private static extern IntPtr GetShellWindow();
@@ -195,7 +194,7 @@ public partial class MainWindow : Window
     
         if(iconHandle == IntPtr.Zero)
             return null;
-        //Console.WriteLine("AICONHANDLE" + iconHandle);
+        
         try {
             ImageSource icn = Imaging.CreateBitmapSourceFromHIcon(
                         iconHandle,
@@ -237,8 +236,6 @@ public partial class MainWindow : Window
     List<IntPtr> wins = new();
     static Dictionary<IntPtr,List<object>> appics = new();
     static Dictionary<Button,dockButton> dockbtn = new();
-    Grid cnt = new() {Background = Brushes.Black};
-    Image bgr = new();
     HWND hwnd = 0;
     HWND fgw = 0;
 
@@ -248,18 +245,15 @@ public partial class MainWindow : Window
     StackPanel dockiconsright = new() { Orientation = Orientation.Horizontal};
     public StackPanel runningapps = new() { Orientation = Orientation.Horizontal};
     static double iconsize = 48;
-    //string smp = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu);
     public Grid mtc = new();
     Border appsmenu = new();
     
-    string appfolderpath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OrangemiumDock");
-    string settingspath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OrangemiumDock\\settings.json");
     Border apsb = new() {Background = new SolidColorBrush(Color.FromArgb(150,0,0,0)),HorizontalAlignment = HorizontalAlignment.Center,ClipToBounds = true};
     static ContextMenu mainmenu = new();
     ScrollViewer sw = new() {};
     Dictionary<string,dockButton> groupexeicon = new();
 
-    static SolidColorBrush activecolor = new SolidColorBrush();
+    static Brush? activecolor;
     bool dockhovered = false;
     double cpadd = 0;
     Border? rapsep;
@@ -273,36 +267,19 @@ public partial class MainWindow : Window
 
     class iconRdata() {
         public HWND hwnd = 0;
-        public Process process;
+        public Process? process;
         public int type = 0;
         public string path = "";
     }
+
+    WINDOWPLACEMENT fgwp = new();
     public MainWindow()
     {
         bool running = true;
         InitializeComponent();
-        if (!Directory.Exists(appfolderpath)) {
-            Directory.CreateDirectory(appfolderpath);
-        }
-        if (!Directory.Exists(appfolderpath + "\\icons")) {
-            Directory.CreateDirectory(appfolderpath + "\\icons");
-        }
-        if (!File.Exists(settingspath)) {
-            App.settings = new();
-            App.settings.iconBlacklist.Add("TextInputHost.exe");
-            App.settings.dockItems.Add(new App.iconDataType() {name = "Apps...", target = "AppsDrawer"});
-            File.WriteAllText(settingspath,JsonConvert.SerializeObject(App.settings));
-        }else {
-            var s = JsonConvert.DeserializeObject<App.settingsDataType>(File.ReadAllText(settingspath));
-            if (s == null) {
-                throw new Exception("Settings is null!!!");
-            }
-            App.settings = s;
-        }
-        
 
         ShowInTaskbar = false;
-        //iconsize = System.Windows.SystemParameters.PrimaryScreenHeight - System.Windows.SystemParameters.WorkArea.Height;
+        
         hwnd = new WindowInteropHelper(this).Handle;
         bool actagain = true;
         void blrf() {
@@ -349,14 +326,18 @@ public partial class MainWindow : Window
         iconrefresher = new Thread(() => {
             while (running) {
                 int i = 0;
-                while (!(i == icref.Count)) {
+                while (!(i >= icref.Count)) {
                     var data = icref[i];
                     //1 is for window icons, 0 is probably gonna be for files but its TODO.
                     if (data.type == 1) {
                         var key = data.hwnd;
                         var prc = data.process;
-                        var ico = GetAppIcon(key);
-                        if (ico == null) {
+                        ImageSource? ico = null;
+                        var task = Task.Run(() => GetAppIcon(key));
+                        if (task.Wait(TimeSpan.FromSeconds(1)))
+                            ico = task.Result;
+                        
+                        if (ico == null && prc != null) {
                             try {
                                 var mdl = prc.MainModule;
                                 if (mdl != null) {
@@ -410,22 +391,22 @@ public partial class MainWindow : Window
         setitm.Click += (e,a) => {
             new SettingsWindow(App.settings).ShowDialog();
             loadsettings();
-            savesettings();
+            App.savesettings();
         };
         MenuItem deditm = new() {Header = "Edit..."};
         mainmenu.Items.Add(deditm);
         deditm.Click += (e,a) => {
             new dockeditWindow(App.settings.dockItems).ShowDialog();
             loadsettings();
-            savesettings();
+            App.savesettings();
         };
         MenuItem qitm = new() {Header = "Quit"};
         mainmenu.Items.Add(qitm);
         qitm.Click += (e,a) => {
-            savesettings();
+            App.savesettings();
             Application.Current.Shutdown();
         };
-        Closing += (e,a) => {savesettings();running = false;};
+        Closing += (e,a) => {App.savesettings();running = false;};
 
         mtc.MouseEnter += (e,a) => {
             dockhovered = true;
@@ -438,7 +419,7 @@ public partial class MainWindow : Window
             if (e.Key == Key.S) {
                 new SettingsWindow(App.settings).ShowDialog();
                 loadsettings();
-                savesettings();
+                App.savesettings();
             }
         };
 
@@ -463,7 +444,7 @@ public partial class MainWindow : Window
                     App.settings.dockItems.Add(ico);
                 }
                 loadsettings();
-                savesettings();
+                App.savesettings();
             }
         };
         
@@ -479,6 +460,7 @@ public partial class MainWindow : Window
         
         
         WindowStyle = WindowStyle.None;
+        ResizeMode = ResizeMode.NoResize;
         AllowsTransparency = true;
         Background = Brushes.Transparent;
         Content = mtc;
@@ -496,15 +478,14 @@ public partial class MainWindow : Window
         DispatcherTimer AnimationTicker = new() {Interval = TimeSpan.FromMilliseconds(1)};
         DispatcherTimer dt = new() {Interval = TimeSpan.FromMilliseconds(App.settings.tickerInterval)};
         dt.Tick += (e,a) => {
-            HWND fg = GetForegroundWindow();
-            fgw = fg;
-            refreshtasklist();
-            var win = GetForegroundWindow();
+            fgw = GetForegroundWindow();
+            if (IsVisible) refreshtasklist();
             WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
             GetWindowPlacement(fgw, ref placement);
-            if (wins.Contains(win) && placement.showCmd != 2) {
+            fgwp = placement;
+            if (wins.Contains(fgw) && placement.showCmd != 2) {
                 RECT aa;
-                GetWindowRect(new HandleRef(this, win), out aa);
+                GetWindowRect(new HandleRef(this, fgw), out aa);
                 foregroundrct = aa;
                 if (aa.Bottom >= SystemParameters.FullPrimaryScreenHeight && aa.Top == 0) {
                     Hide(); //hide in fullscreen apps/games.
@@ -521,6 +502,7 @@ public partial class MainWindow : Window
                 if (blr != null && apdw == null) blr.Show();
                 Show();
             }
+            
             if (App.settings.autohide == "Off" || apdw != null) {
                 mtc.Background = null;
                 cpadd = 0;
@@ -544,38 +526,28 @@ public partial class MainWindow : Window
                     }
                 }
                 if (App.settings.autohide == "Smart") {
-                    target = 0;
-                    
-                    //var win = GetForegroundWindow();
-                    //if (wins.Contains(win)) {
-                        
-                        
-                        if(foregroundrct != null)
-                        {
-                            var rect = (RECT)foregroundrct;
-                            if (App.settings.dockPosition == "Bottom") {
-                                if (rect.Bottom > Top - cpadd) {
-                                    target = App.settings.iconSize - 1;
-                                    //Console.WriteLine(win);
-                                }
-                            }else if (App.settings.dockPosition == "Top") {
-                                if (rect.Top < Top + Height + cpadd) {
-                                    target = App.settings.iconSize - 1;
-                                    //Console.WriteLine(win);
-                                }
-                            }else if (App.settings.dockPosition == "Right") {
-                                if (rect.Right > Left - cpadd) {
-                                    target = App.settings.iconSize - 1;
-                                    //Console.WriteLine(win);
-                                }
-                            }else if (App.settings.dockPosition == "Left") {
-                                if (rect.Left < Left + Width + cpadd) {
-                                    target = App.settings.iconSize - 1;
-                                    //Console.WriteLine(win);
-                                }
+                    target = 0; 
+                    if(foregroundrct != null)
+                    {
+                        var rect = (RECT)foregroundrct;
+                        if (App.settings.dockPosition == "Bottom") {
+                            if (rect.Bottom > Top - cpadd) {
+                                target = App.settings.iconSize - 1;
+                            }
+                        }else if (App.settings.dockPosition == "Top") {
+                            if (rect.Top < Top + Height + cpadd) {
+                                target = App.settings.iconSize - 1;
+                            }
+                        }else if (App.settings.dockPosition == "Right") {
+                            if (rect.Right > Left - cpadd) {
+                                target = App.settings.iconSize - 1;
+                            }
+                        }else if (App.settings.dockPosition == "Left") {
+                            if (rect.Left < Left + Width + cpadd) {
+                                target = App.settings.iconSize - 1;
                             }
                         }
-                    //}
+                    }
                 }
                 if (dockhovered) {
                     target = 0;
@@ -606,7 +578,6 @@ public partial class MainWindow : Window
                                     docksize += (int)(btnc.Height + btnc.Margin.Top + btnc.Margin.Bottom);
                                 }
                             }
-                            //docksize += App.settings.iconSize;
                             if (Math.Ceiling(currentsize) < docksize || docksize < Math.Ceiling(currentsize)) {
                                 if (docksize > Math.Ceiling(currentsize)) {
                                     double diff = docksize - currentsize;
@@ -634,7 +605,6 @@ public partial class MainWindow : Window
                                 }
                             }
                         }else if (y is Border) {
-                            //docksize += 7;
                             var grd = (Border)y;
                             if (grd.Visibility != Visibility.Collapsed) {
                                 if (App.settings.dockPosition == "Top" || App.settings.dockPosition == "Bottom") {
@@ -660,14 +630,8 @@ public partial class MainWindow : Window
             
             try {
                 if (App.settings.dockPosition == "Top" || App.settings.dockPosition == "Bottom") {
-                    //sw.Width = docksize;
-                    //apsb.Width = currentsize;
-                    //mbar.Height = iconsize;
                     mbar.Width = Double.NaN;
                 }else if (App.settings.dockPosition == "Right" || App.settings.dockPosition == "Left") {
-                    //sw.Height = docksize;
-                    //apsb.Height = currentsize;
-                    //mbar.Width = iconsize;
                     mbar.Height = Double.NaN;
                 }
             }catch {}
@@ -757,7 +721,6 @@ public partial class MainWindow : Window
     void appbar() {
         try {
             if (App.settings.registerAsAppBar) {
-                //WindowStyle = WindowStyle.SingleBorderWindow;
                 if (App.settings.dockPosition == "Bottom") {
                     AppBarFunctions.SetAppBar(this, ABEdge.Bottom);
                 }
@@ -780,7 +743,7 @@ public partial class MainWindow : Window
     }
     Border createseparator() {
         Border sp = new();
-        sp.Background = new SolidColorBrush(App.getColor(App.styles["separatorColor"].ToString()) ?? Color.FromRgb(255,255,255));
+        sp.Background = App.getBrush(App.styles["separatorColor"]);
         if (App.settings.dockPosition == "Top" || App.settings.dockPosition == "Bottom") {
             sp.Width = 1;
         }else if (App.settings.dockPosition == "Right" || App.settings.dockPosition == "Left") {
@@ -832,7 +795,7 @@ public partial class MainWindow : Window
         if (App.styles.ContainsKey("dockBorder")) {
             applyStyle(apsb, (JObject)App.styles["dockBorder"]);
         }
-        activecolor = new SolidColorBrush(App.getColor(App.styles["activeAppColor"].ToString()) ?? Color.FromRgb(0,0,0));
+        activecolor = App.getBrush(App.styles["activeAppColor"]);
         foreach (object x in dockitems.Children) {
             if (x is StackPanel) {
                 var sp = (StackPanel)x;
@@ -857,7 +820,7 @@ public partial class MainWindow : Window
             }else if (ico.target == "Separator") {
                cnt.Children.Add(createseparator()); 
             }else {
-                dockButton btn = new(this);
+                dockButton btn = new();
                 
                 cnt.Children.Add(btn.btn);
                 btn.updatedata(ico.name, false);
@@ -887,14 +850,10 @@ public partial class MainWindow : Window
                     
                 };
                 try {
-                    //new Thread(() => {
-                        //try {
                     BitmapImage bitmap = new(new Uri(ico.icon));
                     
                     bitmap.Freeze();
                     Application.Current.Dispatcher.Invoke(new Action(() => {btn.updateicon(bitmap);}));
-                        //}catch {} 
-                    //}).Start();
                 }catch {}
                 btn.ctx.Items.Add(new Separator());
                 MenuItem edititm = new() {Header = "Edit..."};
@@ -902,16 +861,13 @@ public partial class MainWindow : Window
                     iconeditWindow ic = new(ico);
                     ic.ShowDialog();
                     loadsettings();
-                    savesettings();
+                    App.savesettings();
                 };
                 btn.ctx.Items.Add(edititm);
             }
         }
-        //appbar();
     }
-    void savesettings() {
-        File.WriteAllText(settingspath,JsonConvert.SerializeObject(App.settings));
-    }
+    
 
     Dictionary<HWND,List<object>> objs = new();
     List<iconRdata> icref = new();
@@ -932,7 +888,7 @@ public partial class MainWindow : Window
         {
             Console.WriteLine(window.Key);
             if (hwnd != window.Key) {
-                UInt32 pid;
+                uint pid;
                 Console.WriteLine("Getting Process");
                 GetWindowThreadProcessId(window.Key,out pid);
                 Process prc = Process.GetProcessById((int)pid);
@@ -946,7 +902,6 @@ public partial class MainWindow : Window
                                 include = false;
                             }
                         }
-                        
                     }catch {}
                 }else {include = false;}
                 if (include && !appics.ContainsKey(window.Key)) {
@@ -956,7 +911,7 @@ public partial class MainWindow : Window
                         if (rapsep != null && rapsep.Parent != runningapps && App.settings.automaticSeparatorAtRunningApps) {
                             runningapps.Children.Add(rapsep);
                         }
-                        dockButton btn = new(this,window.Key);
+                        dockButton btn = new(window.Key);
                         
                         btn.ctx.Items.Add(new Separator());
                         MenuItem miwins = new() {Header = "Windows..."};
@@ -1011,27 +966,24 @@ public partial class MainWindow : Window
                 Console.WriteLine("Updating etc..");
                 if (appics.ContainsKey(window.Key)) {
                     var l = appics[window.Key];
-                    WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
-                    GetWindowPlacement(window.Key, ref placement);
+                    
                     foreach (object x in l) {
                         if (x is dockButton) {
                             var btn = (dockButton)x;
                             if (btn.hwnds.Contains(fgw) && windows.ContainsKey(fgw)) {
                                 btn.hd = fgw;
-                                btn.updatedata(windows[fgw], placement.showCmd != 2);
+                                btn.updatedata(windows[fgw], fgwp.showCmd != 2);
                             }else {
                                 btn.hd = window.Key;
-                                btn.updatedata(window.Value, (btn.hwnds.Contains(fgw) && placement.showCmd != 2));
+                                btn.updatedata(window.Value, (btn.hwnds.Contains(fgw) && fgwp.showCmd != 2));
                             }
                             getappiconinto(btn,btn.hd,prc);
                         }else if (x is dockInnerButton) { 
                             var btn = (dockInnerButton)x;
-                            btn.updatedata(window.Value, (fgw == window.Key && placement.showCmd != 2));
+                            btn.updatedata(window.Value, (fgw == window.Key && fgwp.showCmd != 2));
                             if (btn.parentdb.spinnerpopup.IsOpen) getappiconinto(btn,window.Key,prc);
                         }
                     }
-                    
-                    
                 }else {
                     //Console.WriteLine("App icon not found!!!");
                 }
@@ -1219,7 +1171,6 @@ public partial class MainWindow : Window
         public List<HWND> hwnds = new();
         public string key = "";
         public HWND hd = 0;
-        public bool staticicon = false;
         public void updatedata(string title, bool active = false) {
             btntip.Content = title;
             activ = active;
@@ -1236,7 +1187,7 @@ public partial class MainWindow : Window
         public void updateicon(ImageSource imgs) {
             ico.Source = imgs;
         }
-        public dockButton(MainWindow w,HWND hdd = 0) {
+        public dockButton(HWND hdd = 0) {
             if (App.settings.useIconsInSubmenus) {
                 spinner = new WrapPanel() {MaxWidth=320};
             }else {
@@ -1277,15 +1228,16 @@ public partial class MainWindow : Window
                     if (hwnds.Count > 1) {
                         spinnerpopup.IsOpen = true;
                     }else {
-                        if (activ) {
-                            ShowWindow(hd, SW_MINIMIZE);
-                        }else {
-                            ShowWindow(hd, SW_MINIMIZE);
-                            ShowWindow(hd, SW_RESTORE);
-                            SetForegroundWindow(hd);
-                        }
+                        new Thread(() => {
+                            if (activ) {
+                                ShowWindow(hd, SW_MINIMIZE);
+                            }else {
+                                ShowWindow(hd, SW_MINIMIZE);
+                                ShowWindow(hd, SW_RESTORE);
+                                SetForegroundWindow(hd);
+                            }
+                        }).Start();
                     }
-                    
                 };
             }
             hwnds.Add(hd);
@@ -1296,14 +1248,14 @@ public partial class MainWindow : Window
     }
     public class dockInnerButton {
         public dockButton parentdb;
-        ToolTip btntip = new();
+        ToolTip? btntip = null;
         public Button btn = new() {BorderThickness = new Thickness(0),Background = Brushes.Transparent, Height = iconsize,HorizontalContentAlignment = HorizontalAlignment.Stretch};
         public Image ico = new() {Width = iconsize / 2, Height = iconsize / 2,Margin = new Thickness(iconsize / 8),Stretch = Stretch.Uniform,VerticalAlignment = VerticalAlignment.Center};
-        public TextBlock name = new() {VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(12), Foreground = new SolidColorBrush(App.getColor(App.styles["submenuForeground"].ToString()) ?? Color.FromRgb(255,255,255)),TextTrimming = TextTrimming.CharacterEllipsis};
+        public TextBlock? name = null;
         bool activ = false;
         public void updatedata(string title, bool active = false) {
-            name.Text = title;
-            btntip.Content = title;
+            if (name != null) name.Text = title;
+            if (btntip != null) btntip.Content = title;
             activ = active;
             if (active) {
                 btn.Background = activecolor;
@@ -1319,10 +1271,12 @@ public partial class MainWindow : Window
             DockPanel sp = new();
             sp.Children.Add(ico);
             if (App.settings.useIconsInSubmenus) {
+                btntip = new();
                 btn.Width = App.settings.iconSize;
                 btn.Height = App.settings.iconSize;
                 btn.ToolTip = btntip;
             }else {
+                name = new() {VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(12), Foreground = App.getBrush(App.styles["submenuForeground"]),TextTrimming = TextTrimming.CharacterEllipsis};
                 sp.Children.Add(name);
             }
             btn.Content = sp;

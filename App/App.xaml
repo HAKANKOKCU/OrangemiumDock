@@ -138,9 +138,11 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Button}">
-                        <Border x:Name="oborder" BorderThickness="0" Background="{TemplateBinding Background}" SnapsToDevicePixels="true" CornerRadius="8">
-                            <Border x:Name="border" BorderThickness="0" CornerRadius="8">
-                                <ContentPresenter x:Name="contentPresenter" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        <Border Background="Transparent">
+                            <Border x:Name="oborder" BorderThickness="0" Background="{TemplateBinding Background}" SnapsToDevicePixels="true" CornerRadius="8">
+                                <Border x:Name="border" BorderThickness="0" CornerRadius="8">
+                                    <ContentPresenter x:Name="contentPresenter" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                </Border>
                             </Border>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -164,9 +166,11 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Button}">
-                        <Border x:Name="oborder" BorderThickness="0" Background="{TemplateBinding Background}" SnapsToDevicePixels="true" CornerRadius="8">
-                            <Border x:Name="border" BorderThickness="0" CornerRadius="8">
-                                <ContentPresenter x:Name="contentPresenter" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        <Border Background="Transparent">
+                            <Border x:Name="oborder" BorderThickness="0" Background="{TemplateBinding Background}" SnapsToDevicePixels="true" CornerRadius="8">
+                                <Border x:Name="border" BorderThickness="0" CornerRadius="8">
+                                    <ContentPresenter x:Name="contentPresenter" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                </Border>
                             </Border>
                         </Border>
                         <ControlTemplate.Triggers>

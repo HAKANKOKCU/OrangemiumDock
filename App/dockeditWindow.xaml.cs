@@ -51,8 +51,10 @@ public partial class dockeditWindow : Window
             }catch {}
         };
         deletebtn.Click += (e,a) => {
-            list.RemoveAt(lb.SelectedIndex);
-            makelist();
+            try {
+                list.RemoveAt(lb.SelectedIndex);
+                makelist();
+            }catch {}
         };
         editbtn.Click += (e,a) => {
             if (lb.SelectedIndex < 0) {return;}

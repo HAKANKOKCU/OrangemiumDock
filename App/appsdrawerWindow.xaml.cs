@@ -104,6 +104,7 @@ public partial class appsdrawerWindow : Window
                 mdp.Margin = new Thickness(0);
             }
         };
+
         
         Loaded += (e,a) => {Activate();if (App.settings.enableAppsDrawerBlur) App.EnableBlur(this);mtb.Focus();Deactivated += (e,a) => {try {Close();}catch{}};};
         dirs = Directory.GetDirectories(smpc).ToList();

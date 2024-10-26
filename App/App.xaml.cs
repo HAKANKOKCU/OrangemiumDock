@@ -11,6 +11,7 @@ using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
 using System.Runtime.InteropServices.ComTypes;
+using Newtonsoft.Json;
 
 namespace OrangemiumDock;
 
@@ -19,6 +20,9 @@ namespace OrangemiumDock;
 /// </summary>
 public partial class App : Application
 {
+    public static readonly string appfolderpath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OrangemiumDock");
+    public static readonly string settingspath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OrangemiumDock\\settings.json");
+    
     public static App.settingsDataType settings;
     public static Dictionary<string, Object> styles = new();
      [DllImport("shell32.dll", CharSet = CharSet.Auto)]
@@ -158,7 +162,8 @@ public partial class App : Application
         RegistryKey? regKey = Registry.CurrentUser.OpenSubKey("Control Panel\\Desktop", false);
         if (regKey != null)
         {
-            pathWallpaper = regKey.GetValue("WallPaper").ToString();
+            var reg = regKey.GetValue("WallPaper");
+            if (reg != null) pathWallpaper = reg.ToString() ?? "";
             regKey.Close();
         }
         return pathWallpaper;
@@ -388,6 +393,28 @@ public partial class App : Application
     
     public App() : base() {
         Dispatcher.UnhandledException += crash;
+        if (!Directory.Exists(appfolderpath)) {
+            Directory.CreateDirectory(appfolderpath);
+        }
+        if (!Directory.Exists(appfolderpath + "\\icons")) {
+            Directory.CreateDirectory(appfolderpath + "\\icons");
+        }
+        if (!File.Exists(settingspath)) {
+            settings = new();
+            settings.iconBlacklist.Add("TextInputHost.exe");
+            settings.dockItems.Add(new App.iconDataType() {name = "Apps...", target = "AppsDrawer"});
+            File.WriteAllText(settingspath,JsonConvert.SerializeObject(settings));
+        }else {
+            var s = JsonConvert.DeserializeObject<App.settingsDataType>(File.ReadAllText(settingspath));
+            if (s == null) {
+                throw new Exception("Settings is null!!!");
+            }
+            settings = s;
+        }
+    }
+    
+    public static void savesettings() {
+        File.WriteAllText(settingspath,JsonConvert.SerializeObject(App.settings));
     }
 
     void crash(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e) {
