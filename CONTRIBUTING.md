@@ -10,6 +10,6 @@ You can report the bug at Issues tab. But make sure:
 * If you took the idea from an issue, or if there was one, you should mention it
 ### I fixed a bug
 * Do NOT make something that clearly creates an security issue/memory leak/crash
-* Explain it clearly
+* Explain the original issue clearly
 ### I reformatted the code...
-* It will NOT be accepted
+* It will NOT be accepted (unless I like it)
