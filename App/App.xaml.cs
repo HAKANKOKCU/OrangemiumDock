@@ -340,23 +340,14 @@ public partial class App : Application
         public List<iconDataType> dockItems = new();
         public string groupRunningApps = "Executable";
         public bool registerAsAppBar = false;
-        //public string dockColor = "#77000000";
-        //public string dockBorderRadius = "AUTO";
-        //public string separatorColor = "#FFFFFF";
         public int tickerInterval = 500;
-        //public string activeAppColor = "ACCENT";
         public bool topmost = false;
         public double docktransformY = 0;
         public double docktransformX = 0;
         public string autohide = "Off";
         public List<string> iconBlacklist = new();
         public bool automaticSeparatorAtRunningApps = true;
-        //public string dockButtonStyleToUse = "asbs";
         public string appsDrawerTheme = "Dark";
-        //public string submenuCornerRadius = "8";
-        //public string submenuButtonStyleToUse = "asbs";
-        //public string submenuBackground = "#FFFFFF";
-        //public string submenuForeground = "#000000";
         public string stylesPath = "";
         public bool enableAppsDrawerBlur = true;
         public bool useIconsInSubmenus = false;
@@ -411,6 +402,10 @@ public partial class App : Application
             }
             settings = s;
         }
+    }
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        new MainWindow().Show();
     }
     
     public static void savesettings() {
