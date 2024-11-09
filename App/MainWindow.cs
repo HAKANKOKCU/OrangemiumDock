@@ -1203,7 +1203,7 @@ public partial class MainWindow : Window
         public Button btn = new() {BorderThickness = new Thickness(0),Background = Brushes.Transparent, Width = iconsize,Height = iconsize};
         public Image ico = new() {Width = iconsize / 2, Height = iconsize / 2,Stretch = Stretch.Uniform};
         public Panel spinner;
-        public ScrollViewer spinnerscroll = new() {VerticalScrollBarVisibility = ScrollBarVisibility.Auto};
+        public ScrollViewer spinnerscroll = new() {VerticalScrollBarVisibility = ScrollBarVisibility.Hidden, PanningMode = PanningMode.Both, CanContentScroll = true};
         public Popup spinnerpopup = new();
         public bool activ = false;
         public List<HWND> hwnds = new();
