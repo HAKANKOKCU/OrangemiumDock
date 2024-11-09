@@ -276,7 +276,7 @@ public partial class MainWindow : Window
 
     List<Button> removediconsanimate = new();
 
-    static QuarticEase eio = new QuarticEase() {EasingMode = EasingMode.EaseInOut};
+    
     public MainWindow()
     {
         Title = "Orangemium Dock";
@@ -1264,7 +1264,7 @@ public partial class MainWindow : Window
             if (App.settings.animationSpeed != 0)
             spinnerpopup.Opened += (e,a) => {
                 DoubleAnimation opacit = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.2 * (App.settings.animationSpeed / 5)));
-                opacit.EasingFunction = eio;
+                opacit.EasingFunction = App.eio;
                 spinnercont.BeginAnimation(Border.OpacityProperty, opacit);
                 if (!App.settings.useIconsInSubmenus) {
                     double cakulatedheig = spinnercont.BorderThickness.Top + spinnercont.BorderThickness.Bottom;
@@ -1273,7 +1273,7 @@ public partial class MainWindow : Window
                     }
                     spinnerscroll.Height = cakulatedheig;
                     DoubleAnimation siz = new DoubleAnimation(0, spinnercont.ActualHeight, TimeSpan.FromSeconds(0.2 * (App.settings.animationSpeed / 5)));
-                    siz.EasingFunction = eio;
+                    siz.EasingFunction = App.eio;
 
                     siz.Completed += (g,h) => {
                         spinnerscroll.Height = double.NaN;

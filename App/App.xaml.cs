@@ -12,6 +12,7 @@ using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using Newtonsoft.Json;
+using System.Windows.Media.Animation;
 
 namespace OrangemiumDock;
 
@@ -20,6 +21,7 @@ namespace OrangemiumDock;
 /// </summary>
 public partial class App : Application
 {
+    public static QuarticEase eio = new QuarticEase() {EasingMode = EasingMode.EaseInOut};
     public static readonly string appfolderpath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OrangemiumDock");
     public static readonly string settingspath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OrangemiumDock\\settings.json");
     

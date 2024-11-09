@@ -5,16 +5,21 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OrangemiumDock"
         mc:Ignorable="d"
-        Title="Apps" WindowState="Maximized" WindowStyle="None" ShowInTaskbar="false" AllowsTransparency="true">
-    <Grid Name="mdp" Margin="8">
-        <ScrollViewer Name="sw" VerticalScrollBarVisibility="Hidden" CanContentScroll="True" VirtualizingPanel.ScrollUnit="Pixel" PanningMode="Both">
-            <WrapPanel Name="wp" HorizontalAlignment="Center"></WrapPanel>
-        </ScrollViewer>
-        <Border HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5" Background="Black" CornerRadius="16" Name="tb">
-            <TextBox Name="mtb" BorderThickness="0" Background="Transparent" Foreground="White" Style="{StaticResource OTBox}" CaretBrush="White" Width="250" Height="32" FontSize="14" Padding="4" VerticalContentAlignment="Center"></TextBox>
-            <Border.Effect>
-                <DropShadowEffect Direction="-75" ShadowDepth="0" Opacity="0.8" BlurRadius="12"/>
-            </Border.Effect>
-        </Border>
+        Title="Apps" WindowState="Maximized" WindowStyle="None" ShowInTaskbar="false" AllowsTransparency="true" Topmost="true">
+    <Grid Name="mdpparent">
+        <Grid Name="mdp" Margin="8">
+            <ScrollViewer Name="sw" VerticalScrollBarVisibility="Hidden" CanContentScroll="True" VirtualizingPanel.ScrollUnit="Pixel" PanningMode="Both">
+                <WrapPanel Name="wp" HorizontalAlignment="Center"></WrapPanel>
+            </ScrollViewer>
+            <Border HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5" Background="Black" CornerRadius="16" Name="tb">
+                <Grid>
+                    <Label Content="Search..." Name="slbl" Opacity="0.6" Foreground="White" VerticalAlignment="Center"></Label>
+                    <TextBox Name="mtb" BorderThickness="0" Background="Transparent" Foreground="White" Style="{StaticResource OTBox}" CaretBrush="White" Width="250" Height="32" FontSize="14" Padding="4" VerticalContentAlignment="Center"></TextBox>
+                </Grid>
+                <Border.Effect>
+                    <DropShadowEffect Direction="-75" ShadowDepth="0" Opacity="0.8" BlurRadius="12"/>
+                </Border.Effect>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

@@ -15,6 +15,7 @@ using System.Windows.Threading;
 using HWND = System.IntPtr;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using System.Windows.Media.Animation;
 
 namespace OrangemiumDock;
 
@@ -46,12 +47,30 @@ public partial class appsdrawerWindow : Window
         });
         InitializeComponent();
         settings = App.settings;
+        Background = Brushes.Transparent;
+        Border? bg = null;
+        if (App.settings.animationSpeed != 0) {
+            bg = new() {CornerRadius = new CornerRadius(24),MaxWidth=24,MaxHeight=24,HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch};
+            Opacity = 0;
+            mdpparent.Children.Insert(0,bg);
+        }
         if (App.settings.appsDrawerTheme == "Dark") {
-            Background = new SolidColorBrush(Color.FromArgb(App.settings.appsMenuAlpha,0,0,0));
+            var bgc = new SolidColorBrush(Color.FromArgb(App.settings.appsMenuAlpha,0,0,0));
+            if (bg != null) {
+                bg.Background = bgc;
+            }else {
+                Background = bgc;
+            }
         }else {
-            Background = new SolidColorBrush(Color.FromArgb(App.settings.appsMenuAlpha,255,255,255));
+            var bgc = new SolidColorBrush(Color.FromArgb(App.settings.appsMenuAlpha,255,255,255));
+            if (bg != null) {
+                bg.Background = bgc;
+            }else {
+                Background = bgc;
+            }
             mtb.CaretBrush = Brushes.Black;
             mtb.Foreground = Brushes.Black;
+            slbl.Foreground = Brushes.Black;
             tb.Background = Brushes.White;
         }
         if (window.blr != null) window.blr.Hide();
@@ -76,17 +95,35 @@ public partial class appsdrawerWindow : Window
             wp.Margin = new Thickness(0,42,0,0);
         }
         
-       
+       bool preventclose = true;
         Closing += (e,a) => {
-            running = false;
-            try {
-                mdp.Children.Remove(window.mtc);
-                window.Content = window.mtc;
-                window.mtc.HorizontalAlignment = HorizontalAlignment.Stretch;
-                window.mtc.VerticalAlignment = VerticalAlignment.Stretch;
-            }catch {}
-            window.apdw = null;
-            if (window.blr != null) window.blr.Show();
+            if (preventclose) {
+                running = false;
+                try {
+                    mdp.Children.Remove(window.mtc);
+                    window.Content = window.mtc;
+                    window.mtc.HorizontalAlignment = HorizontalAlignment.Stretch;
+                    window.mtc.VerticalAlignment = VerticalAlignment.Stretch;
+                }catch {}
+                window.apdw = null;
+                if (window.blr != null) window.blr.Show();
+                if (App.settings.animationSpeed != 0) {
+                    a.Cancel = true;
+                    preventclose = false;
+                    bg.CornerRadius = new CornerRadius(24);
+                    DoubleAnimation opacit = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
+                    opacit.EasingFunction = App.eio;
+                    opacit.Completed += (e,a) => Close();
+                    BeginAnimation(Window.OpacityProperty, opacit);
+                    DoubleAnimation sizw = new DoubleAnimation(Width, 0, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
+                    sizw.EasingFunction = App.eio;
+                    bg.BeginAnimation(Border.MaxWidthProperty, sizw);
+                    bg.BeginAnimation(Border.MaxHeightProperty, sizw);
+                }
+            }else {
+
+            }
+            
         };
         KeyDown += (a,e) => {
             if (e.Key == Key.Escape) {
@@ -106,7 +143,21 @@ public partial class appsdrawerWindow : Window
         };
 
         
-        Loaded += (e,a) => {Activate();if (App.settings.enableAppsDrawerBlur) App.EnableBlur(this);mtb.Focus();Deactivated += (e,a) => {try {Close();}catch{}};};
+        Loaded += (e,a) => {
+            Activate();if (App.settings.enableAppsDrawerBlur) App.EnableBlur(this);mtb.Focus();Deactivated += (e,a) => {try {Close();}catch{}};
+            if (App.settings.animationSpeed != 0) {
+                DoubleAnimation opacit = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
+                opacit.Completed += (e,a) => {
+                    bg.CornerRadius = new CornerRadius(0);
+                };
+                opacit.EasingFunction = App.eio;
+                BeginAnimation(Window.OpacityProperty, opacit);
+                DoubleAnimation sizw = new DoubleAnimation(0, Width, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
+                sizw.EasingFunction = App.eio;
+                bg.BeginAnimation(Border.MaxWidthProperty, sizw);
+                bg.BeginAnimation(Border.MaxHeightProperty, sizw);
+            }
+        };
         dirs = Directory.GetDirectories(smpc).ToList();
         foreach (string d in Directory.GetDirectories(smp)) {
             dirs.Add(d);
@@ -115,7 +166,11 @@ public partial class appsdrawerWindow : Window
         dirs.Insert(0, smpc);
         dirs.Insert(0, smp);
         reloadlist();
-        mtb.TextChanged += (e,a) => {reloadlist();};
+        mtb.TextChanged += (e,a) => {
+            reloadlist();
+            slbl.Visibility = mtb.Text == "" ? Visibility.Visible : Visibility.Hidden;
+            
+        };
         iconloader.Start();
     }
 
