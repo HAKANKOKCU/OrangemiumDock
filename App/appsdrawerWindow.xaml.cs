@@ -127,7 +127,11 @@ public partial class appsdrawerWindow : Window
         };
         KeyDown += (a,e) => {
             if (e.Key == Key.Escape) {
-                Close();
+                if (mtb.Text.Length > 0) {
+                    mtb.Text = "";
+                }else {
+                    Close();
+                }
             }
             if (e.Key == Key.F11) {
                 WindowState = WindowState.Normal;
