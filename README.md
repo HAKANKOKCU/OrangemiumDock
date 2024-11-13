@@ -7,11 +7,12 @@ OrangemiumDock (originally Budgie Dock) is a dock for your Windows desktop.
 * To download the lastest DEV; [Download this entire folder](https://github.com/HAKANKOKCU/OrangemiumDock/tree/main/App/bin/Debug/net8.0-windows)(just download the repo zip and extract that folder) and run OrangemiumDock.exe
 * To add an icon:
   * Simply drop an EXE to the dock.
-  * Right click at dock, click "OrangemiumDock...", click "Edit...". At that window, drop the EXE to the list.
+  * Right click at dock, click "OrangemiumDock...", click "Edit...". At that window, drop the EXE to the list. This way you can directly edit the icon.
 * To edit the dock items in a better way:
   * Right click at dock, click "OrangemiumDock...", click "Edit...".
   * This way also allows you to add Separators, or add dock items after running apps area.
 # What is better? What is worse?
+[See at my website](https://tbudgie.netlify.app/odock.html#what-is-better-what-is-worse-)
 | Feature | [BDock](https://github.com/HAKANKOKCU/Budgie-Dock) | ODock |
 | - | - | - |
 | Smart Auto Hide | :x: | ✅ |
@@ -26,7 +27,7 @@ OrangemiumDock (originally Budgie Dock) is a dock for your Windows desktop.
 ## Styling
 BDock was using styles inside settings, which was worser. Now it's in it's own file and more customizeable.
 ## Multitasking
-Normally BDock wasn't even supposed to show icons and was added later on. It was buggy...
+Normally BDock wasn't even supposed to show running apps and was added later on. It was buggy...
 ### Icons
 If explaination at the table was too complicated, this would be more complicated so...
 # Thats not enough, show me more!
@@ -35,6 +36,6 @@ If explaination at the table was too complicated, this would be more complicated
 ![{25FA67A4-F555-4514-B068-0E5AFECB34C5}](https://github.com/user-attachments/assets/510aaf99-7965-49bb-867a-f95cf422106b)
 
 # How can I compile myself?
-* Download the [/App](https://github.com/HAKANKOKCU/OrangemiumDock/tree/main/App) directory. using dotnet CLI or Visual Studio should work fine.
+* Download the [/App](https://github.com/HAKANKOKCU/OrangemiumDock/tree/main/App) directory if you can't use Git, or just clone this repo and open the sln file at /App. Using dotnet CLI or Visual Studio should work fine.
 # Contributing
 See [CONTRIBUTING.md](https://github.com/HAKANKOKCU/OrangemiumDock/blob/main/CONTRIBUTING.md)
