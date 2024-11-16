@@ -210,7 +210,7 @@ public partial class appsdrawerWindow : Window
                 foreach (string file in fils) {
                     string extension = Path.GetExtension(file).ToLower();
                     string name = Path.GetFileName(file).Replace(extension,"").ToLower();
-                    if ((extension == ".lnk" || extension == ".exe") && name.Contains(filter.ToLower()) && ((!name.Contains("uninstall") && !name.Contains("readme")) || name.Contains("tool"))) {
+                    if ((extension == ".lnk" || extension == ".exe") && name.Contains(filter.ToLower()) && ((!name.Contains("uninstall") && !name.Contains("readme") && !name.Contains(" help") && !name.Contains(" documentation") && !name.Contains("eula") && !name.Contains("changelog")) || name.Contains("tool"))) {
                         Button btn = new() {HorizontalContentAlignment = HorizontalAlignment.Stretch};
                         if (App.settings.appsDrawerItemStyle == "Grid") {
                             btn.Width = 124;

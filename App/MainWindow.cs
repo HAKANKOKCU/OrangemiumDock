@@ -913,19 +913,23 @@ public partial class MainWindow : Window
                 uint pid;
                 Console.WriteLine("Getting Process");
                 GetWindowThreadProcessId(window.Key,out pid);
-                Process prc = Process.GetProcessById((int)pid);
-                bool include = true;
-                if (!wins.Contains(window.Key)) {
-                    try {
-                        if (pid == Process.GetCurrentProcess().Id) include = false;
-                        var module = prc.MainModule;
-                        if (module != null) {
-                            if (App.settings.iconBlacklist.Contains(module.FileName) || App.settings.iconBlacklist.Contains(Path.GetFileName(module.FileName))) {
-                                include = false;
+                bool include = false; //false because if GetProcessById fails, it means the app isn't even running
+                Process? prc = null;
+                try {
+                    prc = Process.GetProcessById((int)pid);
+                    include = true;
+                    if (!wins.Contains(window.Key)) {
+                        try {
+                            if (pid == Process.GetCurrentProcess().Id) include = false;
+                            var module = prc.MainModule;
+                            if (module != null) {
+                                if (App.settings.iconBlacklist.Contains(module.FileName) || App.settings.iconBlacklist.Contains(Path.GetFileName(module.FileName))) {
+                                    include = false;
+                                }
                             }
-                        }
-                    }catch {}
-                }else {include = false;}
+                        }catch {}
+                    }else {include = false;}
+                }catch {}
                 if (include && !appics.ContainsKey(window.Key)) {
                     
                         
@@ -958,6 +962,7 @@ public partial class MainWindow : Window
                         btn.spinner.Children.Add(btni.btn);
                         appics[window.Key] = new List<object>() {btni,btn};
                     }
+                    if (prc != null)
                     try {
                         var module = prc.MainModule;
                         if (module == null) throw new Exception();
