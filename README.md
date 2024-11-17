@@ -20,7 +20,7 @@ OrangemiumDock (originally Budgie Dock) is a dock for your Windows desktop.
 | Styling | Worser | Better |
 | Multitask Implementation | Worser | Better |
 | Running apps icon | EXE icon + Saved to file | Actual window icon, Not saved (Better) |
-| Custom Popup Widgets (AKA Special Runpaths) | Apps drawer + Search + Shutdown | Only apps drawer (for now) |
+| Custom Popup Widgets (AKA Special Runpaths) | Apps drawer + Search + Shutdown | Apps Drawer + Shutdown |
 | Load Speed | Slower | Faster |
 | Accent Color | Orange | Follows your accent color |
 | OS Support | Windows XP+ (Better) | Windows 10+ |

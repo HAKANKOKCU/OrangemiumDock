@@ -858,6 +858,8 @@ public partial class MainWindow : Window
                                 apdw.Show();
                                 focusblur = false;
                             }
+                        }else if (ico.target == "Shutdown") {
+                            new shutdownPopup().Show();
                         }else {
                             if (apdw != null) {
                                 apdw.Close();
