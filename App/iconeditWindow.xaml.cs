@@ -42,6 +42,10 @@ public partial class iconeditWindow : Window
             icon.icon = iconTB.Text;
             licon(icon);
         };
+        parametersTB.Text = icon.parameters;
+        parametersTB.TextChanged += (a,e) => {
+            icon.parameters = parametersTB.Text;
+        };
         licon(icon);
     }
     void licon(App.iconDataType icon) {

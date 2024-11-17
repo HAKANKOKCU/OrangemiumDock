@@ -361,6 +361,7 @@ public partial class App : Application
         public string name = "";
         public string target = "";
         public string icon = "";
+        public string parameters = "";
     }
 
     internal static void EnableBlur(Window win)

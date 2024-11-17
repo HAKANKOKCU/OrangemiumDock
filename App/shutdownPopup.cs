@@ -36,7 +36,7 @@ public partial class shutdownPopup : Window
         if (style.ContainsKey("background")) {
             Background = App.getBrush(style["background"]);
         }else {
-            Background = new SolidColorBrush(Color.FromArgb(150,0,0,0));
+            Background = new SolidColorBrush(Color.FromArgb(180,0,0,0));
         }
         AllowsTransparency = true;
         KeyDown += (a,e) => {
@@ -52,6 +52,10 @@ public partial class shutdownPopup : Window
         soptions.Children.Add(sitem("Hibernate","h"));
         mc.Children.Add(soptions);
         Content = mc;
+
+        Loaded += (e,a) => {
+            Activate();Deactivated += (e,a) => {try {Close();}catch{}};
+        };
     }
 
     Button sitem(string text,string action) {

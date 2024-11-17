@@ -17,7 +17,8 @@
             <TextBox Name="iconTB" Style="{StaticResource OTBox}"></TextBox>
             <Label FontSize="14">Target</Label>
             <TextBox Name="targetTB" Style="{StaticResource OTBox}"></TextBox>
-            
+            <Label FontSize="14">Parameters</Label>
+            <TextBox Name="parametersTB" Style="{StaticResource OTBox}"></TextBox>
         </StackPanel>
     </ScrollViewer>
 </Window>

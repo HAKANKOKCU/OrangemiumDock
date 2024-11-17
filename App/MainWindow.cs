@@ -514,6 +514,47 @@ public partial class MainWindow : Window
                 apsb.Opacity = 1;
             }else {
                 mtc.Background = new SolidColorBrush(Color.FromArgb(1,0,0,0));
+                if (App.settings.animationSpeed == 0) {
+                    if ((App.settings.autohide == "On" || App.settings.autohide == "Smart") && apdw == null) {
+                        double target = 0;
+                        
+                        if (App.settings.autohide == "On") {
+                            if (!dockhovered) {
+                                target = App.settings.iconSize - 1;
+                            }
+                        }
+                        if (App.settings.autohide == "Smart") {
+                            target = 0; 
+                            if(foregroundrct != null)
+                            {
+                                var rect = (RECT)foregroundrct;
+                                if (App.settings.dockPosition == "Bottom") {
+                                    if (rect.Bottom > Top - cpadd) {
+                                        target = App.settings.iconSize - 1;
+                                    }
+                                }else if (App.settings.dockPosition == "Top") {
+                                    if (rect.Top < Top + Height + cpadd) {
+                                        target = App.settings.iconSize - 1;
+                                    }
+                                }else if (App.settings.dockPosition == "Right") {
+                                    if (rect.Right > Left - cpadd) {
+                                        target = App.settings.iconSize - 1;
+                                    }
+                                }else if (App.settings.dockPosition == "Left") {
+                                    if (rect.Left < Left + Width + cpadd) {
+                                        target = App.settings.iconSize - 1;
+                                    }
+                                }
+                            }
+                        }
+                        if (dockhovered) {
+                            target = 0;
+                        }
+                        cpadd = target;
+                        apsb.Opacity = 1 - (cpadd / App.settings.iconSize);
+                        repos();
+                    }
+                }
             }
             
             repos();
@@ -867,6 +908,7 @@ public partial class MainWindow : Window
                             }
                             Process.Start(new ProcessStartInfo() {
                                 FileName = ico.target,
+                                Arguments = ico.parameters,
                                 UseShellExecute = true
                             });
                         }
