@@ -353,7 +353,7 @@ public partial class App : Application
         public string stylesPath = "";
         public bool enableAppsDrawerBlur = true;
         public bool useIconsInSubmenus = false;
-        public byte appsMenuAlpha = 150;
+        public byte appsMenuAlpha = 180;
         public string blurDock = "Off";
         public string appsDrawerItemStyle = "Grid";
     }
@@ -371,6 +371,27 @@ public partial class App : Application
         var accent = new AccentPolicy();
         var accentStructSize = Marshal.SizeOf(accent);
         accent.AccentState = AccentState.ACCENT_ENABLE_BLURBEHIND;
+        
+        var accentPtr = Marshal.AllocHGlobal(accentStructSize);
+        Marshal.StructureToPtr(accent, accentPtr, false);
+        
+        var data = new WindowCompositionAttributeData();
+        data.Attribute = WindowCompositionAttribute.WCA_ACCENT_POLICY;
+        data.SizeOfData = accentStructSize;
+        data.Data = accentPtr;
+
+        SetWindowCompositionAttribute(windowHelper.Handle, ref data);
+        
+        Marshal.FreeHGlobal(accentPtr);
+    }
+
+    internal static void DisableBlur(Window win)
+    {
+        var windowHelper = new WindowInteropHelper(win);
+        
+        var accent = new AccentPolicy();
+        var accentStructSize = Marshal.SizeOf(accent);
+        accent.AccentState = AccentState.ACCENT_DISABLED;
         
         var accentPtr = Marshal.AllocHGlobal(accentStructSize);
         Marshal.StructureToPtr(accent, accentPtr, false);

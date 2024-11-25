@@ -26,6 +26,7 @@ public partial class shutdownPopup : Window
     JObject style = new();
     public shutdownPopup()
     {
+        Grid mg = new();
         WindowStyle = WindowStyle.None;
         WindowState = WindowState.Maximized;
         ShowInTaskbar = false;
@@ -33,15 +34,33 @@ public partial class shutdownPopup : Window
         if (App.styles.ContainsKey("shutdowndialog")) {
             style = (JObject)App.styles["shutdowndialog"];
         }
-        if (style.ContainsKey("background")) {
-            Background = App.getBrush(style["background"]);
+        
+        Background = Brushes.Transparent;
+        Border? bg = null;
+        if (App.settings.animationSpeed != 0) {
+            bg = new() {CornerRadius = new CornerRadius(24),MaxWidth=24,MaxHeight=24,HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch};
+            Opacity = 0;
+            mg.Children.Insert(0,bg);
+            if (style.ContainsKey("background")) {
+                bg.Background = App.getBrush(style["background"]);
+            }else {
+                bg.Background = new SolidColorBrush(Color.FromArgb(200,0,0,0));
+            }
         }else {
-            Background = new SolidColorBrush(Color.FromArgb(180,0,0,0));
+            if (style.ContainsKey("background")) {
+                Background = App.getBrush(style["background"]);
+            }else {
+                Background = new SolidColorBrush(Color.FromArgb(200,0,0,0));
+            }
         }
+        
         AllowsTransparency = true;
         KeyDown += (a,e) => {
             if (e.Key == Key.Escape) {
                 Close();
+            }
+            if (e.Key == Key.F1) {
+                darknessEffect();
             }
         };
         DockPanel mc = new() {Margin = new Thickness(8)};
@@ -51,10 +70,47 @@ public partial class shutdownPopup : Window
         soptions.Children.Add(sitem("Logout","l"));
         soptions.Children.Add(sitem("Hibernate","h"));
         mc.Children.Add(soptions);
-        Content = mc;
+        mg.Children.Add(mc);
+        Content = mg;
+
+        bool preventclose = true;
+        Closing += (e,a) => {
+            App.DisableBlur(this);
+            if (preventclose) {
+                if (App.settings.animationSpeed != 0) {
+                    a.Cancel = true;
+                    preventclose = false;
+                    bg.CornerRadius = new CornerRadius(24);
+                    DoubleAnimation opacit = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
+                    opacit.EasingFunction = App.eio;
+                    opacit.Completed += (e,a) => Close();
+                    BeginAnimation(Window.OpacityProperty, opacit);
+                    DoubleAnimation sizw = new DoubleAnimation(Width, 0, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
+                    sizw.EasingFunction = App.eio;
+                    bg.BeginAnimation(Border.MaxWidthProperty, sizw);
+                    bg.BeginAnimation(Border.MaxHeightProperty, sizw);
+                }
+            }else {
+
+            }
+            
+        };
 
         Loaded += (e,a) => {
             Activate();Deactivated += (e,a) => {try {Close();}catch{}};
+            if (App.settings.animationSpeed != 0) {
+                DoubleAnimation opacit = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
+                opacit.Completed += (e,a) => {
+                    bg.CornerRadius = new CornerRadius(0);
+                    App.EnableBlur(this);
+                };
+                opacit.EasingFunction = App.eio;
+                BeginAnimation(Window.OpacityProperty, opacit);
+                DoubleAnimation sizw = new DoubleAnimation(0, Width, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
+                sizw.EasingFunction = App.eio;
+                bg.BeginAnimation(Border.MaxWidthProperty, sizw);
+                bg.BeginAnimation(Border.MaxHeightProperty, sizw);
+            }
         };
     }
 
@@ -67,15 +123,22 @@ public partial class shutdownPopup : Window
         itm.Content = text;
         itm.Click += (e,a) => {
             darknessEffect();
-            //MessageBox.Show("/" + action);
-            Process.Start("shutdown","/" + action);
+            Process.Start(new ProcessStartInfo() {
+                FileName = "shutdown",
+                Arguments = "/" + action,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden
+            });
         };
         return itm;
     }
     void darknessEffect() {
-        Close();
         if (App.settings.animationSpeed == 0) return;
         var win = new Window();
+        win.Loaded += (e,a) => {
+            Close();
+            App.EnableBlur(win);
+        };
         win.ShowInTaskbar = false;
         win.Background = Brushes.Black;
         win.WindowStyle = WindowStyle.None;
@@ -84,10 +147,10 @@ public partial class shutdownPopup : Window
         win.AllowsTransparency = true;
         win.Opacity = 0;
         win.Show();
-        DoubleAnimation opacit = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
+        DoubleAnimation opacit = new DoubleAnimation(0.7843137254901961, 1, TimeSpan.FromSeconds(0.2 * (App.settings.animationSpeed / 5)));
         opacit.EasingFunction = App.eio;
         opacit.Completed += (e,a) => {
-            Thread.Sleep(250);
+            Thread.Sleep(500);
             win.Close();
         };
         win.BeginAnimation(Window.OpacityProperty, opacit);

@@ -16,6 +16,7 @@ using HWND = System.IntPtr;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.Windows.Media.Animation;
+using System.Windows.Controls.Primitives;
 
 namespace OrangemiumDock;
 
@@ -95,7 +96,7 @@ public partial class appsdrawerWindow : Window
             wp.Margin = new Thickness(0,42,0,0);
         }
         
-       bool preventclose = true;
+        bool preventclose = true;
         Closing += (e,a) => {
             if (preventclose) {
                 running = false;
@@ -131,6 +132,11 @@ public partial class appsdrawerWindow : Window
                     mtb.Text = "";
                 }else {
                     Close();
+                }
+            }
+            if (e.Key == Key.Enter) {
+                if (firstitem != null) {
+                    firstitem.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
                 }
             }
             if (e.Key == Key.F11) {
@@ -182,13 +188,14 @@ public partial class appsdrawerWindow : Window
 
     string smp = Environment.GetFolderPath(Environment.SpecialFolder.Programs);
     string smpc = Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms);
-
+    Button? firstitem = null;
     void reloadlist(string? filter = null) {
         sw.ScrollToHome();
         if (filter == null) filter = mtb.Text;
         wp.Children.Clear();
         Dictionary<string,WrapPanel> wpas = new();
         Dictionary<string,StackPanel> sps = new();
+        firstitem = null;
         foreach (string dir in dirs) {
             try {
                 string[] fils = Directory.GetFiles(dir);
@@ -212,6 +219,9 @@ public partial class appsdrawerWindow : Window
                     string name = Path.GetFileName(file).Replace(extension,"").ToLower();
                     if ((extension == ".lnk" || extension == ".exe") && name.Contains(filter.ToLower()) && ((!name.Contains("uninstall") && !name.Contains("readme") && !name.Contains(" help") && !name.Contains(" documentation") && !name.Contains("eula") && !name.Contains("changelog")) || name.Contains("tool"))) {
                         Button btn = new() {HorizontalContentAlignment = HorizontalAlignment.Stretch};
+                        if (firstitem == null) {
+                            firstitem = btn;
+                        }
                         if (App.settings.appsDrawerItemStyle == "Grid") {
                             btn.Width = 124;
                             btn.Height = 124;
@@ -256,10 +266,12 @@ public partial class appsdrawerWindow : Window
                         btn.Content = btns;
                         wpa.Children.Add(btn);
                         btn.Click += (e,a) => {
-                            Process.Start(new ProcessStartInfo() {
-                                FileName = file,
-                                UseShellExecute = true
-                            });
+                            try {
+                                Process.Start(new ProcessStartInfo() {
+                                    FileName = file,
+                                    UseShellExecute = true
+                                });
+                            }catch {} // ignore exception
                             Close();
                         };
                         if (!wp.Children.Contains(sp)) {
