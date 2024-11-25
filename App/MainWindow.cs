@@ -276,6 +276,16 @@ public partial class MainWindow : Window
 
     List<Button> removediconsanimate = new();
 
+    class icgResult {
+
+        public enum skipReason {
+            sameIcon,
+            error,
+            notSkipped
+        }
+        public ImageSource? src = null;
+        public skipReason skipreason = skipReason.error;
+    }
     
     public MainWindow()
     {
@@ -337,12 +347,61 @@ public partial class MainWindow : Window
                     if (data.type == 1) {
                         var key = data.hwnd;
                         var prc = data.process;
-                        ImageSource? ico = null;
-                        var task = Task.Run(() => GetAppIcon(key));
+                        icgResult? ico = null;
+                        var task = Task.Run(() => {
+                            icgResult result = new();
+                            IntPtr iconHandle = SendMessage(key,WM_GETICON,ICON_BIG,0);
+                            if(iconHandle == IntPtr.Zero)
+                                iconHandle = SendMessage(key,WM_GETICON,ICON_SMALL,0);
+                        
+                            if(iconHandle == IntPtr.Zero)
+                                iconHandle = SendMessage(key,WM_GETICON,ICON_SMALL2,0);
+                            
+                            if (iconHandle == IntPtr.Zero)
+                                iconHandle = GetClassLongPtr(key, GCL_HICON);
+                            if (iconHandle == IntPtr.Zero)
+                                iconHandle = GetClassLongPtr(key, GCL_HICONSM);
+                        
+                            if(iconHandle != IntPtr.Zero) {
+                                bool geticon = false;
+                                foreach (object obj in objs[key]) {
+                                    if (obj is dockButton) {
+                                        var button = (dockButton)obj;
+                                        if (button.lasticon != iconHandle) {
+                                            geticon = true;
+                                            button.lasticon = iconHandle;
+                                        }
+                                    }
+                                    if (obj is dockInnerButton) {
+                                        var button = (dockInnerButton)obj;
+                                        if (button.lasticon != iconHandle) {
+                                            geticon = true;
+                                            button.lasticon = iconHandle;
+                                        }
+                                    }
+                                }
+                                if (geticon) {
+                                    Console.WriteLine("Getting icon");
+                                    try {
+                                        ImageSource icn = Imaging.CreateBitmapSourceFromHIcon(
+                                                    iconHandle,
+                                                    Int32Rect.Empty,
+                                                    BitmapSizeOptions.FromEmptyOptions());
+                                        icn.Freeze();
+                                        result.skipreason = icgResult.skipReason.notSkipped;
+                                        result.src = icn;
+                                    }catch {}
+                                }else {
+                                    //Console.WriteLine("Not getting it cuz same");
+                                    result.skipreason = icgResult.skipReason.sameIcon;
+                                }
+                            }
+                            return result;
+                        });
                         if (task.Wait(TimeSpan.FromSeconds(1)))
                             ico = task.Result;
                         
-                        if (ico == null && prc != null) {
+                        if (ico == null || (ico.src == null && prc != null && ico.skipreason == icgResult.skipReason.error)) {
                             try {
                                 var mdl = prc.MainModule;
                                 if (mdl != null) {
@@ -356,23 +415,23 @@ public partial class MainWindow : Window
                                     //}
                                     
                                     if (ico == null) {
-                                        ico = App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined);
+                                        ico = new icgResult() {src = App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined)};
                                     }
                                 }
                             }catch {}
                         }
-                        if (ico != null) {
-                            ico.Freeze();
+                        if (ico != null && ico.src != null) {
+                            ico.src.Freeze();
                             if (objs.ContainsKey(key)) {
                                 Application.Current.Dispatcher.Invoke(new Action(() => {
                                     foreach (object obj in objs[key]) {
                                         if (obj is dockButton) {
                                             var butn = (dockButton)obj;
-                                            butn.updateicon(ico);
+                                            butn.updateicon(ico.src);
                                         }
                                         if (obj is dockInnerButton) {
                                             var butn = (dockInnerButton)obj;
-                                            butn.updateicon(ico);
+                                            butn.updateicon(ico.src);
                                         }
                                     }
                                     objs.Remove(key);
@@ -948,14 +1007,14 @@ public partial class MainWindow : Window
 
     void refreshtasklist() {
         if (App.settings.automaticSeparatorAtRunningApps && rapsep == null) rapsep = createseparator();
-        Console.WriteLine("Getting Windows");
+        //Console.WriteLine("Getting Windows");
         IDictionary<HWND,string> windows = GetOpenWindows();
         foreach(KeyValuePair<IntPtr, string> window in windows)
         {
-            Console.WriteLine(window.Key);
+            //Console.WriteLine(window.Key);
             if (hwnd != window.Key) {
                 uint pid;
-                Console.WriteLine("Getting Process");
+                //Console.WriteLine("Getting Process");
                 GetWindowThreadProcessId(window.Key,out pid);
                 bool include = false; //false because if GetProcessById fails, it means the app isn't even running
                 Process? prc = null;
@@ -1034,7 +1093,7 @@ public partial class MainWindow : Window
                 
                     
                 }
-                Console.WriteLine("Updating etc..");
+                //Console.WriteLine("Updating etc..");
                 if (appics.ContainsKey(window.Key)) {
                     var l = appics[window.Key];
                     
@@ -1258,6 +1317,7 @@ public partial class MainWindow : Window
         public List<HWND> hwnds = new();
         public string key = "";
         public HWND hd = 0;
+        public HWND? lasticon = null;
         public int tickcnt = 0;
         bool hovered = false;
         public void updatedata(string title, bool active = false) {
@@ -1310,24 +1370,26 @@ public partial class MainWindow : Window
             spinnerpopup.Margin = new Thickness(iconsize);
             spinnerpopup.AllowsTransparency = true;
 
-            if (App.settings.animationSpeed != 0)
+            
             spinnerpopup.Opened += (e,a) => {
-                DoubleAnimation opacit = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.2 * (App.settings.animationSpeed / 5)));
-                opacit.EasingFunction = App.eio;
-                spinnercont.BeginAnimation(Border.OpacityProperty, opacit);
-                if (!App.settings.useIconsInSubmenus) {
-                    double cakulatedheig = spinnercont.BorderThickness.Top + spinnercont.BorderThickness.Bottom;
-                    foreach (Button itm in spinner.Children) {
-                        cakulatedheig += itm.Height + itm.Margin.Top + itm.Margin.Bottom;
-                    }
-                    spinnerscroll.Height = cakulatedheig;
-                    DoubleAnimation siz = new DoubleAnimation(0, spinnercont.ActualHeight, TimeSpan.FromSeconds(0.2 * (App.settings.animationSpeed / 5)));
-                    siz.EasingFunction = App.eio;
+                if (App.settings.animationSpeed != 0) {
+                    DoubleAnimation opacit = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.2 * (App.settings.animationSpeed / 5)));
+                    opacit.EasingFunction = App.eio;
+                    spinnercont.BeginAnimation(Border.OpacityProperty, opacit);
+                    if (!App.settings.useIconsInSubmenus) {
+                        double cakulatedheig = spinnercont.BorderThickness.Top + spinnercont.BorderThickness.Bottom;
+                        foreach (Button itm in spinner.Children) {
+                            cakulatedheig += itm.Height + itm.Margin.Top + itm.Margin.Bottom;
+                        }
+                        spinnerscroll.Height = cakulatedheig;
+                        DoubleAnimation siz = new DoubleAnimation(0, spinnercont.ActualHeight, TimeSpan.FromSeconds(0.2 * (App.settings.animationSpeed / 5)));
+                        siz.EasingFunction = App.eio;
 
-                    siz.Completed += (g,h) => {
-                        spinnerscroll.Height = double.NaN;
-                    };
-                    spinnercont.BeginAnimation(Border.MaxHeightProperty, siz);
+                        siz.Completed += (g,h) => {
+                            spinnerscroll.Height = double.NaN;
+                        };
+                        spinnercont.BeginAnimation(Border.MaxHeightProperty, siz);
+                    }
                 }
             };
 
@@ -1391,6 +1453,7 @@ public partial class MainWindow : Window
         public Button btn = new() {BorderThickness = new Thickness(0),Background = Brushes.Transparent, Height = iconsize,HorizontalContentAlignment = HorizontalAlignment.Stretch};
         public Image ico = new() {Width = iconsize / 2, Height = iconsize / 2,Margin = new Thickness(iconsize / 8),Stretch = Stretch.Uniform,VerticalAlignment = VerticalAlignment.Center};
         public TextBlock? name = null;
+        public HWND? lasticon = null;
         bool activ = false;
         public void updatedata(string title, bool active = false) {
             if (name != null) name.Text = title;
