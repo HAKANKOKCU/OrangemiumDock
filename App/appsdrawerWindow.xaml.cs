@@ -18,6 +18,24 @@ using Newtonsoft.Json;
 using System.Windows.Media.Animation;
 using System.Windows.Controls.Primitives;
 
+using Control = System.Windows.Controls.Control;
+using Button = System.Windows.Controls.Button;
+using ToolTip = System.Windows.Controls.ToolTip;
+using Image = System.Windows.Controls.Image;
+using Panel = System.Windows.Controls.Panel;
+using Orientation = System.Windows.Controls.Orientation;
+using Color = System.Windows.Media.Color;
+using Brushes = System.Windows.Media.Brushes;
+using Brush = System.Windows.Media.Brush;
+using HorizontalAlignment = System.Windows.HorizontalAlignment;
+using VerticalAlignment = System.Windows.VerticalAlignment;
+using Application = System.Windows.Application;
+using Point = System.Windows.Point;
+using DataFormats = System.Windows.DataFormats;
+using MessageBox = System.Windows.MessageBox;
+using Label = System.Windows.Controls.Label;
+using ButtonBase = System.Windows.Controls.Primitives.ButtonBase;
+
 namespace OrangemiumDock;
 
 /// <summary>
@@ -182,6 +200,7 @@ public partial class appsdrawerWindow : Window
             
         };
         iconloader.Start();
+        Left = window.Left;
     }
 
     List<string> dirs;

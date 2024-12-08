@@ -84,6 +84,12 @@
                 <ScrollViewer>
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
+                            <Label VerticalAlignment="Center">Screen</Label>
+                            <ComboBox Name="scrid">
+                                
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
                             <Label VerticalAlignment="Center">Icon Size</Label>
                             <TextBox VerticalAlignment="Center" Name="iconSizeTB" Style="{StaticResource OTBox}"></TextBox>
                         </StackPanel>

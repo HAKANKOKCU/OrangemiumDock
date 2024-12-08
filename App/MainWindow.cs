@@ -18,6 +18,24 @@ using System.Windows.Controls.Primitives;
 using WpfAppBar;
 using System.Dynamic;
 using System.Windows.Media.Animation;
+// why microsoft???
+using Control = System.Windows.Controls.Control;
+using Button = System.Windows.Controls.Button;
+using ToolTip = System.Windows.Controls.ToolTip;
+using Image = System.Windows.Controls.Image;
+using Panel = System.Windows.Controls.Panel;
+using Orientation = System.Windows.Controls.Orientation;
+using Color = System.Windows.Media.Color;
+using Brushes = System.Windows.Media.Brushes;
+using Brush = System.Windows.Media.Brush;
+using HorizontalAlignment = System.Windows.HorizontalAlignment;
+using VerticalAlignment = System.Windows.VerticalAlignment;
+using Application = System.Windows.Application;
+using Point = System.Windows.Point;
+using DataFormats = System.Windows.DataFormats;
+using MessageBox = System.Windows.MessageBox;
+using Label = System.Windows.Controls.Label;
+using ButtonBase = System.Windows.Controls.Primitives.ButtonBase;
 
 namespace OrangemiumDock;
 
@@ -93,6 +111,10 @@ public partial class MainWindow : Window
     [DllImport("User32.dll", SetLastError = true)]
     public static extern IntPtr GetParent(IntPtr hWnd);
 
+    //[DllImport("user32")]
+    //[DllImport("user32")]
+    //private static extern IntPtr SetParent(IntPtr hWnd, IntPtr hWndParent);
+
     public static IDictionary<HWND, string> GetOpenWindows()
     {
         HWND shellWindow = GetShellWindow();
@@ -100,17 +122,21 @@ public partial class MainWindow : Window
 
         EnumWindows(delegate(HWND hWnd, int lParam)
         {
-        if (hWnd == shellWindow) return true;
-        if (!IsWindowVisible(hWnd)) return true;
-        if (GetParent(hWnd) != IntPtr.Zero) return true;
-        int length = GetWindowTextLength(hWnd);
-        if (length == 0) return true;
+            var p = GetParent(hWnd);
+            //if (App.dmc != IntPtr.Zero && p == IntPtr.Zero) SetParent(hWnd, App.dmc);
+            if (hWnd == shellWindow) return true;
+            
+            if (p != IntPtr.Zero && p != App.dmc) return true;
+            if (!IsWindowVisible(hWnd)) return true;
+            int length = GetWindowTextLength(hWnd);
+            if (length == 0) return true;
 
-        StringBuilder builder = new StringBuilder(length);
-        GetWindowText(hWnd, builder, length + 1);
+            StringBuilder builder = new StringBuilder(length);
+            GetWindowText(hWnd, builder, length + 1);
 
-        windows[hWnd] = builder.ToString();
-        return true;
+            windows[hWnd] = builder.ToString();
+            
+            return true;
 
         }, 0);
 
@@ -405,15 +431,15 @@ public partial class MainWindow : Window
                             try {
                                 var mdl = prc.MainModule;
                                 if (mdl != null) {
-                                    
-                                    //var app = App.AppxPackage.FromWindow(key);
-                                    //if (app != null) {
-                                    //    var path = app.FindHighestScaleQualifiedImagePath(app.ResourceId);
-                                    //    if (path != null) ico = new BitmapImage(new Uri(path));
-                                    //}else {
-                                    //    //MessageBox.Show("its null");
-                                    //}
-                                    
+                                    /*
+                                    var app = App.AppxPackage.FromProcess(prc);
+                                    if (app != null) {
+                                        var path = app.FindHighestScaleQualifiedImagePath(app.ResourceId);
+                                        if (path != null) ico = new icgResult() {src = new BitmapImage(new Uri(path))};
+                                    }else {
+                                        //MessageBox.Show("its null");
+                                    }
+                                    */
                                     if (ico == null) {
                                         ico = new icgResult() {src = App.GetIcon(mdl.FileName,App.IconSize.Large, App.ItemState.Undefined)};
                                     }
@@ -770,19 +796,22 @@ public partial class MainWindow : Window
     
 
     void repos() {
+        if (App.settings.displayId >= Screen.AllScreens.Length) {
+            App.settings.displayId = 0;
+        }
         if (App.settings.dockPosition == "Top" || App.settings.dockPosition == "Bottom") {
             double extra = 0;
             if (App.settings.docktransformY < 0) {
                 extra = App.settings.docktransformY;
             }
             if (App.settings.dockPosition == "Bottom") {
-                if (!App.settings.registerAsAppBar) Top = System.Windows.SystemParameters.WorkArea.Top + System.Windows.SystemParameters.WorkArea.Height - iconsize + extra + cpadd - (apsb.BorderThickness.Top + apsb.BorderThickness.Bottom);//+ App.settings.docktransformY;
+                if (!App.settings.registerAsAppBar) Top = Screen.AllScreens[App.settings.displayId].WorkingArea.Top + Screen.AllScreens[App.settings.displayId].WorkingArea.Height - iconsize + extra + cpadd - (apsb.BorderThickness.Top + apsb.BorderThickness.Bottom);//+ App.settings.docktransformY;
             }
             if (App.settings.dockPosition == "Top") {
-                if (!App.settings.registerAsAppBar) Top = System.Windows.SystemParameters.WorkArea.Top + extra - cpadd;//+ App.settings.docktransformY;
+                if (!App.settings.registerAsAppBar) Top = Screen.AllScreens[App.settings.displayId].WorkingArea.Top + extra - cpadd;//+ App.settings.docktransformY;
             }
-            if (!App.settings.registerAsAppBar) Left = System.Windows.SystemParameters.WorkArea.Left;
-            if (!App.settings.registerAsAppBar) Width = System.Windows.SystemParameters.WorkArea.Width;
+            if (!App.settings.registerAsAppBar) Left = Screen.AllScreens[App.settings.displayId].WorkingArea.Left;
+            if (!App.settings.registerAsAppBar) Width = Screen.AllScreens[App.settings.displayId].WorkingArea.Width;
             Height = iconsize + Math.Abs(App.settings.docktransformY) + apsb.BorderThickness.Top + apsb.BorderThickness.Bottom;
             dockitems.Orientation = Orientation.Horizontal;
             dockiconsleft.Orientation = Orientation.Horizontal;
@@ -809,13 +838,13 @@ public partial class MainWindow : Window
                 extra = App.settings.docktransformX;
             }
             if (App.settings.dockPosition == "Right") {
-                if (!App.settings.registerAsAppBar) Left = System.Windows.SystemParameters.WorkArea.Width + System.Windows.SystemParameters.WorkArea.Left - iconsize + extra + cpadd - (apsb.BorderThickness.Left + apsb.BorderThickness.Right);// + App.settings.docktransformX;
+                if (!App.settings.registerAsAppBar) Left = Screen.AllScreens[App.settings.displayId].WorkingArea.Width + Screen.AllScreens[App.settings.displayId].WorkingArea.Left - iconsize + extra + cpadd - (apsb.BorderThickness.Left + apsb.BorderThickness.Right);// + App.settings.docktransformX;
             }
             if (App.settings.dockPosition == "Left") {
-                if (!App.settings.registerAsAppBar) Left = System.Windows.SystemParameters.WorkArea.Left + extra - cpadd; //+ App.settings.docktransformX;
+                if (!App.settings.registerAsAppBar) Left = Screen.AllScreens[App.settings.displayId].WorkingArea.Left + extra - cpadd; //+ App.settings.docktransformX;
             }
-            if (!App.settings.registerAsAppBar) Top = System.Windows.SystemParameters.WorkArea.Top;
-            if (!App.settings.registerAsAppBar) Height = System.Windows.SystemParameters.WorkArea.Height;
+            if (!App.settings.registerAsAppBar) Top = Screen.AllScreens[App.settings.displayId].WorkingArea.Top;
+            if (!App.settings.registerAsAppBar) Height = Screen.AllScreens[App.settings.displayId].WorkingArea.Height;
             Width = iconsize + Math.Abs(App.settings.docktransformX) + apsb.BorderThickness.Left + apsb.BorderThickness.Right;
             dockitems.Orientation = Orientation.Vertical;
             dockiconsleft.Orientation = Orientation.Vertical;
@@ -840,6 +869,8 @@ public partial class MainWindow : Window
     void appbar() {
         try {
             if (App.settings.registerAsAppBar) {
+                Left = Screen.AllScreens[App.settings.displayId].WorkingArea.Left;
+                Top = Screen.AllScreens[App.settings.displayId].WorkingArea.Top;
                 if (App.settings.dockPosition == "Bottom") {
                     AppBarFunctions.SetAppBar(this, ABEdge.Bottom);
                 }
@@ -1011,6 +1042,7 @@ public partial class MainWindow : Window
         IDictionary<HWND,string> windows = GetOpenWindows();
         foreach(KeyValuePair<IntPtr, string> window in windows)
         {
+            //MessageBox.Show(window.Value);
             //Console.WriteLine(window.Key);
             if (hwnd != window.Key) {
                 uint pid;
