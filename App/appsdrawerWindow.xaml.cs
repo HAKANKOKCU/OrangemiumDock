@@ -65,6 +65,13 @@ public partial class appsdrawerWindow : Window
             }
         });
         InitializeComponent();
+
+        Screen cs = Screen.FromPoint(System.Windows.Forms.Cursor.Position);
+        Left = cs.Bounds.Left;
+        Top = cs.Bounds.Top;
+        Width = cs.Bounds.Width;
+        Height = cs.Bounds.Height;
+
         settings = App.settings;
         Background = Brushes.Transparent;
         Border? bg = null;
@@ -134,7 +141,7 @@ public partial class appsdrawerWindow : Window
                     opacit.EasingFunction = App.eio;
                     opacit.Completed += (e,a) => Close();
                     BeginAnimation(Window.OpacityProperty, opacit);
-                    DoubleAnimation sizw = new DoubleAnimation(Width, 0, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
+                    DoubleAnimation sizw = new DoubleAnimation(Math.Max(Width,Height), 0, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
                     sizw.EasingFunction = App.eio;
                     bg.BeginAnimation(Border.MaxWidthProperty, sizw);
                     bg.BeginAnimation(Border.MaxHeightProperty, sizw);
@@ -158,7 +165,7 @@ public partial class appsdrawerWindow : Window
                 }
             }
             if (e.Key == Key.F11) {
-                WindowState = WindowState.Normal;
+                //WindowState = WindowState.Normal;
                 try {
                     mdp.Children.Remove(window.mtc);
                     window.Content = window.mtc;
@@ -166,7 +173,7 @@ public partial class appsdrawerWindow : Window
                     window.mtc.VerticalAlignment = VerticalAlignment.Stretch;
                 }catch {}
                 if (window.blr != null) window.blr.Show();
-                mdp.Margin = new Thickness(0);
+                //mdp.Margin = new Thickness(0);
             }
         };
 
@@ -180,7 +187,7 @@ public partial class appsdrawerWindow : Window
                 };
                 opacit.EasingFunction = App.eio;
                 BeginAnimation(Window.OpacityProperty, opacit);
-                DoubleAnimation sizw = new DoubleAnimation(0, Width, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
+                DoubleAnimation sizw = new DoubleAnimation(0, Math.Max(Width,Height), TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
                 sizw.EasingFunction = App.eio;
                 bg.BeginAnimation(Border.MaxWidthProperty, sizw);
                 bg.BeginAnimation(Border.MaxHeightProperty, sizw);
@@ -200,7 +207,6 @@ public partial class appsdrawerWindow : Window
             
         };
         iconloader.Start();
-        Left = window.Left;
     }
 
     List<string> dirs;

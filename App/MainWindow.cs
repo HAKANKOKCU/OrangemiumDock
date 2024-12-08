@@ -554,7 +554,7 @@ public partial class MainWindow : Window
         AllowsTransparency = true;
         Background = Brushes.Transparent;
         Content = mtc;
-        
+        mtc.ContextMenu = mainmenu;
         Deactivated += (e,a) => actagain = true;
         Activated += (e,a) => {
             blrf();
@@ -796,22 +796,26 @@ public partial class MainWindow : Window
     
 
     void repos() {
+        Screen dp;
         if (App.settings.displayId >= Screen.AllScreens.Length) {
-            App.settings.displayId = 0;
+            dp = Screen.AllScreens[0];
+        }else {
+            dp = Screen.AllScreens[App.settings.displayId];
         }
+        
         if (App.settings.dockPosition == "Top" || App.settings.dockPosition == "Bottom") {
             double extra = 0;
             if (App.settings.docktransformY < 0) {
                 extra = App.settings.docktransformY;
             }
             if (App.settings.dockPosition == "Bottom") {
-                if (!App.settings.registerAsAppBar) Top = Screen.AllScreens[App.settings.displayId].WorkingArea.Top + Screen.AllScreens[App.settings.displayId].WorkingArea.Height - iconsize + extra + cpadd - (apsb.BorderThickness.Top + apsb.BorderThickness.Bottom);//+ App.settings.docktransformY;
+                if (!App.settings.registerAsAppBar) Top = dp.WorkingArea.Top + dp.WorkingArea.Height - iconsize + extra + cpadd - (apsb.BorderThickness.Top + apsb.BorderThickness.Bottom);//+ App.settings.docktransformY;
             }
             if (App.settings.dockPosition == "Top") {
-                if (!App.settings.registerAsAppBar) Top = Screen.AllScreens[App.settings.displayId].WorkingArea.Top + extra - cpadd;//+ App.settings.docktransformY;
+                if (!App.settings.registerAsAppBar) Top = dp.WorkingArea.Top + extra - cpadd;//+ App.settings.docktransformY;
             }
-            if (!App.settings.registerAsAppBar) Left = Screen.AllScreens[App.settings.displayId].WorkingArea.Left;
-            if (!App.settings.registerAsAppBar) Width = Screen.AllScreens[App.settings.displayId].WorkingArea.Width;
+            if (!App.settings.registerAsAppBar) Left = dp.WorkingArea.Left;
+            if (!App.settings.registerAsAppBar) Width = dp.WorkingArea.Width;
             Height = iconsize + Math.Abs(App.settings.docktransformY) + apsb.BorderThickness.Top + apsb.BorderThickness.Bottom;
             dockitems.Orientation = Orientation.Horizontal;
             dockiconsleft.Orientation = Orientation.Horizontal;
@@ -838,13 +842,13 @@ public partial class MainWindow : Window
                 extra = App.settings.docktransformX;
             }
             if (App.settings.dockPosition == "Right") {
-                if (!App.settings.registerAsAppBar) Left = Screen.AllScreens[App.settings.displayId].WorkingArea.Width + Screen.AllScreens[App.settings.displayId].WorkingArea.Left - iconsize + extra + cpadd - (apsb.BorderThickness.Left + apsb.BorderThickness.Right);// + App.settings.docktransformX;
+                if (!App.settings.registerAsAppBar) Left = dp.WorkingArea.Width + dp.WorkingArea.Left - iconsize + extra + cpadd - (apsb.BorderThickness.Left + apsb.BorderThickness.Right);// + App.settings.docktransformX;
             }
             if (App.settings.dockPosition == "Left") {
-                if (!App.settings.registerAsAppBar) Left = Screen.AllScreens[App.settings.displayId].WorkingArea.Left + extra - cpadd; //+ App.settings.docktransformX;
+                if (!App.settings.registerAsAppBar) Left = dp.WorkingArea.Left + extra - cpadd; //+ App.settings.docktransformX;
             }
-            if (!App.settings.registerAsAppBar) Top = Screen.AllScreens[App.settings.displayId].WorkingArea.Top;
-            if (!App.settings.registerAsAppBar) Height = Screen.AllScreens[App.settings.displayId].WorkingArea.Height;
+            if (!App.settings.registerAsAppBar) Top = dp.WorkingArea.Top;
+            if (!App.settings.registerAsAppBar) Height = dp.WorkingArea.Height;
             Width = iconsize + Math.Abs(App.settings.docktransformX) + apsb.BorderThickness.Left + apsb.BorderThickness.Right;
             dockitems.Orientation = Orientation.Vertical;
             dockiconsleft.Orientation = Orientation.Vertical;

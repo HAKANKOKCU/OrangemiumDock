@@ -930,7 +930,12 @@ public partial class App : Application
         if (e.Args.Contains("--desktop")) {
             new desktopManager().Show();
         }else {
-            new MainWindow().Show();
+            MainWindow d = new MainWindow();
+            GlobalHotKey.RegisterHotKey("Win + Alt + O", () => {
+                d.apdw = new appsdrawerWindow(d);
+                d.apdw.Show();
+            });
+            d.Show();
         }
     }
     

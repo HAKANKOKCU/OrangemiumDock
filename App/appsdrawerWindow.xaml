@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OrangemiumDock"
         mc:Ignorable="d"
-        Title="Apps" WindowState="Maximized" WindowStyle="None" ShowInTaskbar="false" AllowsTransparency="true" Topmost="true">
+        Title="Apps" WindowStyle="None" ShowInTaskbar="false" AllowsTransparency="true" Topmost="true">
     <Grid Name="mdpparent">
-        <Grid Name="mdp" Margin="8">
+        <Grid Name="mdp">
             <ScrollViewer Name="sw" VerticalScrollBarVisibility="Hidden" CanContentScroll="True" VirtualizingPanel.ScrollUnit="Pixel" PanningMode="Both">
                 <WrapPanel Name="wp" HorizontalAlignment="Center"></WrapPanel>
             </ScrollViewer>

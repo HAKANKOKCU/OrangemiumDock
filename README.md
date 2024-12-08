@@ -11,6 +11,8 @@ OrangemiumDock (originally Budgie Dock) is a dock for your Windows desktop.
 * To edit the dock items in a better way:
   * Right click at dock, click "OrangemiumDock...", click "Edit...".
   * This way also allows you to add Separators, or add dock items after running apps area.
+* Apps drawer global hook: Windows + Alt + O
+
 # What is better? What is worse?
 [See at my website](https://tbudgie.netlify.app/odock.html#what-is-better-what-is-worse-)
 | Feature | [BDock](https://github.com/HAKANKOKCU/Budgie-Dock) | ODock |
