@@ -274,7 +274,7 @@ public partial class MainWindow : Window
     public Grid mtc = new();
     Border appsmenu = new();
     
-    Border apsb = new() {Background = new SolidColorBrush(Color.FromArgb(150,0,0,0)),HorizontalAlignment = HorizontalAlignment.Center,ClipToBounds = true};
+    public Border apsb = new() {Background = new SolidColorBrush(Color.FromArgb(150,0,0,0)),HorizontalAlignment = HorizontalAlignment.Center,ClipToBounds = true};
     static ContextMenu mainmenu = new();
     ScrollViewer sw = new() {};
     Dictionary<string,dockButton> groupexeicon = new();
@@ -873,8 +873,14 @@ public partial class MainWindow : Window
     void appbar() {
         try {
             if (App.settings.registerAsAppBar) {
-                Left = Screen.AllScreens[App.settings.displayId].WorkingArea.Left;
-                Top = Screen.AllScreens[App.settings.displayId].WorkingArea.Top;
+                Screen dp;
+                if (App.settings.displayId >= Screen.AllScreens.Length) {
+                    dp = Screen.AllScreens[0];
+                }else {
+                    dp = Screen.AllScreens[App.settings.displayId];
+                }
+                Left = dp.WorkingArea.Left;
+                Top = dp.WorkingArea.Top;
                 if (App.settings.dockPosition == "Bottom") {
                     AppBarFunctions.SetAppBar(this, ABEdge.Bottom);
                 }

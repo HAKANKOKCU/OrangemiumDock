@@ -75,7 +75,7 @@
                         <Label FontSize="16" FontWeight="Bold">Styles</Label>
                         <StackPanel Orientation="Horizontal">
                             <Label VerticalAlignment="Center">Style Path (Drop To Textbox)</Label>
-                            <TextBox VerticalAlignment="Center" Name="stylepathTB" Style="{StaticResource OTBox}" AllowDrop="true"></TextBox>
+                            <TextBox VerticalAlignment="Center" Name="stylepathTB" Style="{StaticResource OTBox}" AllowDrop="true" MinWidth="20"></TextBox>
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
@@ -142,6 +142,7 @@
                         </StackPanel>
                         <CheckBox Name="adbb">Blur Background</CheckBox>
                         <CheckBox Name="adwt">White Theme</CheckBox>
+                        <CheckBox Name="apop">Popup Style</CheckBox>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

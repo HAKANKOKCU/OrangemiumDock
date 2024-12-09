@@ -66,13 +66,37 @@ public partial class appsdrawerWindow : Window
         });
         InitializeComponent();
 
-        Screen cs = Screen.FromPoint(System.Windows.Forms.Cursor.Position);
-        Left = cs.Bounds.Left;
-        Top = cs.Bounds.Top;
-        Width = cs.Bounds.Width;
-        Height = cs.Bounds.Height;
 
         settings = App.settings;
+
+        if (settings.appsDrawerAsPopup) {
+            dockpos(window);
+            wp.Margin = new Thickness(0,42,0,0);
+        }else {
+            if (window.blr != null) window.blr.Hide();
+            window.Content = new Grid();
+            fullpos();
+            if (App.settings.dockPosition == "Bottom") {
+                window.mtc.HorizontalAlignment = HorizontalAlignment.Center;
+                window.mtc.VerticalAlignment = VerticalAlignment.Bottom;
+                wp.Margin = new Thickness(0,42,0,App.settings.iconSize);
+                mdp.Children.Add(window.mtc);
+            }else if (App.settings.dockPosition == "Left") {
+                window.mtc.HorizontalAlignment = HorizontalAlignment.Left;
+                window.mtc.VerticalAlignment = VerticalAlignment.Center;
+                wp.Margin = new Thickness(App.settings.iconSize,42,0,0);
+                mdp.Children.Add(window.mtc);
+            }else if (App.settings.dockPosition == "Right") {
+                window.mtc.HorizontalAlignment = HorizontalAlignment.Right;
+                window.mtc.VerticalAlignment = VerticalAlignment.Center;
+                wp.Margin = new Thickness(0,42,0,0);
+                sw.Margin = new Thickness(0,0,App.settings.iconSize,0);
+                mdp.Children.Add(window.mtc);
+            }else {
+                wp.Margin = new Thickness(0,42,0,0);
+            }
+        }
+
         Background = Brushes.Transparent;
         Border? bg = null;
         if (App.settings.animationSpeed != 0) {
@@ -81,14 +105,14 @@ public partial class appsdrawerWindow : Window
             mdpparent.Children.Insert(0,bg);
         }
         if (App.settings.appsDrawerTheme == "Dark") {
-            var bgc = new SolidColorBrush(Color.FromArgb(App.settings.appsMenuAlpha,0,0,0));
+            var bgc = new SolidColorBrush(Color.FromArgb(App.settings.appsDrawerAlpha,0,0,0));
             if (bg != null) {
                 bg.Background = bgc;
             }else {
                 Background = bgc;
             }
         }else {
-            var bgc = new SolidColorBrush(Color.FromArgb(App.settings.appsMenuAlpha,255,255,255));
+            var bgc = new SolidColorBrush(Color.FromArgb(App.settings.appsDrawerAlpha,255,255,255));
             if (bg != null) {
                 bg.Background = bgc;
             }else {
@@ -99,27 +123,8 @@ public partial class appsdrawerWindow : Window
             slbl.Foreground = Brushes.Black;
             tb.Background = Brushes.White;
         }
-        if (window.blr != null) window.blr.Hide();
-        window.Content = new Grid();
-        if (App.settings.dockPosition == "Bottom") {
-            window.mtc.HorizontalAlignment = HorizontalAlignment.Center;
-            window.mtc.VerticalAlignment = VerticalAlignment.Bottom;
-            wp.Margin = new Thickness(0,42,0,App.settings.iconSize);
-            mdp.Children.Add(window.mtc);
-        }else if (App.settings.dockPosition == "Left") {
-            window.mtc.HorizontalAlignment = HorizontalAlignment.Left;
-            window.mtc.VerticalAlignment = VerticalAlignment.Center;
-            wp.Margin = new Thickness(App.settings.iconSize,42,0,0);
-            mdp.Children.Add(window.mtc);
-        }else if (App.settings.dockPosition == "Right") {
-            window.mtc.HorizontalAlignment = HorizontalAlignment.Right;
-            window.mtc.VerticalAlignment = VerticalAlignment.Center;
-            wp.Margin = new Thickness(0,42,0,0);
-            sw.Margin = new Thickness(0,0,App.settings.iconSize,0);
-            mdp.Children.Add(window.mtc);
-        }else {
-            wp.Margin = new Thickness(0,42,0,0);
-        }
+        
+        
         
         bool preventclose = true;
         Closing += (e,a) => {
@@ -164,17 +169,20 @@ public partial class appsdrawerWindow : Window
                     firstitem.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
                 }
             }
-            if (e.Key == Key.F11) {
+            /*if (e.Key == Key.F11) {
                 //WindowState = WindowState.Normal;
+                
                 try {
                     mdp.Children.Remove(window.mtc);
                     window.Content = window.mtc;
                     window.mtc.HorizontalAlignment = HorizontalAlignment.Stretch;
                     window.mtc.VerticalAlignment = VerticalAlignment.Stretch;
+                    dockpos(window);
                 }catch {}
                 if (window.blr != null) window.blr.Show();
+                
                 //mdp.Margin = new Thickness(0);
-            }
+            }*/
         };
 
         
@@ -182,6 +190,7 @@ public partial class appsdrawerWindow : Window
             Activate();if (App.settings.enableAppsDrawerBlur) App.EnableBlur(this);mtb.Focus();Deactivated += (e,a) => {try {Close();}catch{}};
             if (App.settings.animationSpeed != 0) {
                 DoubleAnimation opacit = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
+                if (!settings.appsDrawerAsPopup)
                 opacit.Completed += (e,a) => {
                     bg.CornerRadius = new CornerRadius(0);
                 };
@@ -207,6 +216,38 @@ public partial class appsdrawerWindow : Window
             
         };
         iconloader.Start();
+    }
+
+    void fullpos() {
+        Screen cs = Screen.FromPoint(System.Windows.Forms.Cursor.Position);
+        Left = cs.Bounds.Left;
+        Top = cs.Bounds.Top;
+        Width = cs.Bounds.Width;
+        Height = cs.Bounds.Height;
+    }
+    void dockpos(MainWindow window) {
+        Screen dp;
+        if (App.settings.displayId >= Screen.AllScreens.Length) {
+            dp = Screen.AllScreens[0];
+        }else {
+            dp = Screen.AllScreens[App.settings.displayId];
+        }
+        Width = dp.Bounds.Width / 2;
+        Height = dp.Bounds.Height / 2;
+        Point position = window.apsb.PointToScreen(new Point(0d, 0d));
+        if (App.settings.dockPosition == "Bottom") {
+            Left = position.X;
+            Top = position.Y - (window.apsb.BorderThickness.Top + window.apsb.BorderThickness.Bottom) - Height - 8;
+        }else if (App.settings.dockPosition == "Left") {
+            Top = position.Y;
+            Left = position.X + App.settings.iconSize + (window.apsb.BorderThickness.Left + window.apsb.BorderThickness.Right) + 8;
+        }else if (App.settings.dockPosition == "Right") {
+            Top = position.Y;
+            Left = position.X - (window.apsb.BorderThickness.Left + window.apsb.BorderThickness.Right) - Width - 8;
+        }else {
+            Left = position.X;
+            Top = position.Y + App.settings.iconSize + (window.apsb.BorderThickness.Top + window.apsb.BorderThickness.Bottom) + 8;
+        }
     }
 
     List<string> dirs;
@@ -242,7 +283,7 @@ public partial class appsdrawerWindow : Window
                 foreach (string file in fils) {
                     string extension = Path.GetExtension(file).ToLower();
                     string name = Path.GetFileName(file).Replace(extension,"").ToLower();
-                    if ((extension == ".lnk" || extension == ".exe") && name.Contains(filter.ToLower()) && ((!name.Contains("uninstall") && !name.Contains("readme") && !name.Contains(" help") && !name.Contains(" documentation") && !name.Contains("eula") && !name.Contains("changelog")) || name.Contains("tool"))) {
+                    if ((extension == ".lnk" || extension == ".exe") && name.Contains(filter.ToLower()) && ((!name.Contains("uninstall ") && !name.Contains("readme") && !name.Contains("license") && !name.Contains(" help") && !name.Contains(" documentation") && !name.Contains("eula") && !name.Contains("changelog")) || name.Contains("tool"))) {
                         Button btn = new() {HorizontalContentAlignment = HorizontalAlignment.Stretch};
                         if (firstitem == null) {
                             firstitem = btn;

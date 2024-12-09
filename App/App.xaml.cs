@@ -45,7 +45,7 @@ public partial class App : Application
     public static readonly string appfolderpath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OrangemiumDock");
     public static readonly string settingspath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OrangemiumDock\\settings.json");
     
-    public static App.settingsDataType settings;
+    public static settingsDataType settings;
     public static Dictionary<string, Object> styles = new();
      [DllImport("shell32.dll", CharSet = CharSet.Auto)]
     public static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, out SHFileInfo psfi, uint cbFileInfo, uint uFlags);
@@ -142,7 +142,7 @@ public partial class App : Application
         }
         var shfi = new SHFileInfo();
         var res = SHGetFileInfo(path, attribute, out shfi, (uint)Marshal.SizeOf(shfi), flags);
-        if (object.Equals(res, IntPtr.Zero)) throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
+        if (object.Equals(res, IntPtr.Zero)) throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error()) ?? new Exception();
         try
         {
             var i = Imaging.CreateBitmapSourceFromHIcon(
@@ -373,10 +373,11 @@ public partial class App : Application
         public string stylesPath = "";
         public bool enableAppsDrawerBlur = true;
         public bool useIconsInSubmenus = false;
-        public byte appsMenuAlpha = 180;
+        public byte appsDrawerAlpha = 180;
         public string blurDock = "Off";
         public string appsDrawerItemStyle = "Grid";
         public int displayId = 0;
+        public bool appsDrawerAsPopup = false;
     }
     public class iconDataType {
         public string name = "";
@@ -932,6 +933,7 @@ public partial class App : Application
         }else {
             MainWindow d = new MainWindow();
             GlobalHotKey.RegisterHotKey("Win + Alt + O", () => {
+                d.Activate();
                 d.apdw = new appsdrawerWindow(d);
                 d.apdw.Show();
             });

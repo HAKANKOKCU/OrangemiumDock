@@ -205,5 +205,9 @@ public partial class SettingsWindow : Window
         scrid.SelectionChanged += (e,a) => {
             settings.displayId = scrid.SelectedIndex;
         };
+
+        apop.IsChecked = settings.appsDrawerAsPopup;
+        apop.Checked += (e,a) => {settings.appsDrawerAsPopup = true;};
+        apop.Unchecked += (e,a) => {settings.appsDrawerAsPopup = false;};
     }
 }
