@@ -8,7 +8,7 @@
         Title="Apps" WindowStyle="None" ShowInTaskbar="false" AllowsTransparency="true" Topmost="true">
     <Grid Name="mdpparent">
         <Grid Name="mdp">
-            <ScrollViewer Name="sw" VerticalScrollBarVisibility="Hidden" CanContentScroll="True" VirtualizingPanel.ScrollUnit="Pixel" PanningMode="Both">
+            <ScrollViewer Name="sw" VerticalScrollBarVisibility="Hidden" CanContentScroll="True" VirtualizingPanel.ScrollUnit="Pixel" PanningMode="Both" HorizontalContentAlignment="Center" HorizontalAlignment="Center">
                 <WrapPanel Name="wp" HorizontalAlignment="Center"></WrapPanel>
             </ScrollViewer>
             <Border HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5" Background="Black" CornerRadius="16" Name="tb">

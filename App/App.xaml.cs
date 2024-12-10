@@ -933,9 +933,13 @@ public partial class App : Application
         }else {
             MainWindow d = new MainWindow();
             GlobalHotKey.RegisterHotKey("Win + Alt + O", () => {
-                d.Activate();
-                d.apdw = new appsdrawerWindow(d);
-                d.apdw.Show();
+                if (d.apdw != null) {
+                    d.apdw.Close();
+                }else {
+                    d.Activate();
+                    d.apdw = new appsdrawerWindow(d);
+                    d.apdw.Show();
+                }
             });
             d.Show();
         }

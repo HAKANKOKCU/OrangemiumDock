@@ -43,7 +43,6 @@ namespace OrangemiumDock;
 /// </summary>
 public partial class appsdrawerWindow : Window
 {
-    App.settingsDataType settings;
     Dictionary<string,Image> iconload = new();
     Thread iconloader;
     public appsdrawerWindow(MainWindow window)
@@ -66,12 +65,9 @@ public partial class appsdrawerWindow : Window
         });
         InitializeComponent();
 
-
-        settings = App.settings;
-
-        if (settings.appsDrawerAsPopup) {
+        if (App.settings.appsDrawerAsPopup) {
             dockpos(window);
-            wp.Margin = new Thickness(0,42,0,0);
+            wp.Margin = new Thickness(0,42,0,8);
         }else {
             if (window.blr != null) window.blr.Hide();
             window.Content = new Grid();
@@ -79,21 +75,21 @@ public partial class appsdrawerWindow : Window
             if (App.settings.dockPosition == "Bottom") {
                 window.mtc.HorizontalAlignment = HorizontalAlignment.Center;
                 window.mtc.VerticalAlignment = VerticalAlignment.Bottom;
-                wp.Margin = new Thickness(0,42,0,App.settings.iconSize);
+                wp.Margin = new Thickness(8,42,8,App.settings.iconSize + 8);
                 mdp.Children.Add(window.mtc);
             }else if (App.settings.dockPosition == "Left") {
                 window.mtc.HorizontalAlignment = HorizontalAlignment.Left;
                 window.mtc.VerticalAlignment = VerticalAlignment.Center;
-                wp.Margin = new Thickness(App.settings.iconSize,42,0,0);
+                wp.Margin = new Thickness(App.settings.iconSize + 8,42,8,8);
                 mdp.Children.Add(window.mtc);
             }else if (App.settings.dockPosition == "Right") {
                 window.mtc.HorizontalAlignment = HorizontalAlignment.Right;
                 window.mtc.VerticalAlignment = VerticalAlignment.Center;
-                wp.Margin = new Thickness(0,42,0,0);
+                wp.Margin = new Thickness(8,42,8,8);
                 sw.Margin = new Thickness(0,0,App.settings.iconSize,0);
                 mdp.Children.Add(window.mtc);
             }else {
-                wp.Margin = new Thickness(0,42,0,0);
+                wp.Margin = new Thickness(8,42,8,8);
             }
         }
 
@@ -190,7 +186,7 @@ public partial class appsdrawerWindow : Window
             Activate();if (App.settings.enableAppsDrawerBlur) App.EnableBlur(this);mtb.Focus();Deactivated += (e,a) => {try {Close();}catch{}};
             if (App.settings.animationSpeed != 0) {
                 DoubleAnimation opacit = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.5 * (App.settings.animationSpeed / 5)));
-                if (!settings.appsDrawerAsPopup)
+                if (!App.settings.appsDrawerAsPopup)
                 opacit.Completed += (e,a) => {
                     bg.CornerRadius = new CornerRadius(0);
                 };
@@ -272,7 +268,7 @@ public partial class appsdrawerWindow : Window
                     sp = sps[Path.GetFileName(dir).ToLower()];
                 }else {
                     sp = new() {Orientation = Orientation.Vertical};
-                    Label titlelabel = new() {FontSize = 16, Content = Path.GetFileName(dir),Foreground = settings.appsDrawerTheme == "Dark" ? Brushes.White : Brushes.Black};
+                    Label titlelabel = new() {FontSize = 16, Content = Path.GetFileName(dir),Foreground = App.settings.appsDrawerTheme == "Dark" ? Brushes.White : Brushes.Black};
                     wpa = new();
                     sp.Children.Add(titlelabel);
                     sp.Children.Add(wpa);
@@ -283,20 +279,20 @@ public partial class appsdrawerWindow : Window
                 foreach (string file in fils) {
                     string extension = Path.GetExtension(file).ToLower();
                     string name = Path.GetFileName(file).Replace(extension,"").ToLower();
-                    if ((extension == ".lnk" || extension == ".exe") && name.Contains(filter.ToLower()) && ((!name.Contains("uninstall ") && !name.Contains("readme") && !name.Contains("license") && !name.Contains(" help") && !name.Contains(" documentation") && !name.Contains("eula") && !name.Contains("changelog")) || name.Contains("tool"))) {
+                    if ((extension == ".lnk" || extension == ".exe") && name.Contains(filter.ToLower()) && ((!name.Contains("uninstall") && !name.Contains("readme") && !name.Contains("license") && !name.Contains(" help") && !name.Contains(" documentation") && !name.Contains("eula") && !name.Contains("changelog")) || name.Contains("tool"))) {
                         Button btn = new() {HorizontalContentAlignment = HorizontalAlignment.Stretch};
                         if (firstitem == null) {
                             firstitem = btn;
                         }
                         if (App.settings.appsDrawerItemStyle == "Grid") {
-                            btn.Width = 124;
-                            btn.Height = 124;
+                            btn.Width = 132;
+                            btn.Height = 132;
                         }else {
                             btn.Width = 296;
                             btn.Height = 64;
                         }
                         
-                        btn.Style = (Style)App.Current.Resources[settings.appsDrawerTheme == "Dark" ? "OBtnLight" : "OBtn"];
+                        btn.Style = (Style)App.Current.Resources[App.settings.appsDrawerTheme == "Dark" ? "OBtnLight" : "OBtn"];
                         btn.Background = Brushes.Transparent;
                         Panel btns;
                         Image img = new() {HorizontalAlignment = App.settings.appsDrawerItemStyle == "Grid" ? HorizontalAlignment.Center : HorizontalAlignment.Left,VerticalAlignment = VerticalAlignment.Center};
@@ -321,7 +317,7 @@ public partial class appsdrawerWindow : Window
                         }
 
                         btns.Children.Add(img);
-                        TextBlock lbl = new() {Foreground = settings.appsDrawerTheme == "Dark" ? Brushes.White : Brushes.Black, TextAlignment = TextAlignment.Center,HorizontalAlignment = App.settings.appsDrawerItemStyle == "Grid" ? HorizontalAlignment.Center : HorizontalAlignment.Left, Text = Path.GetFileName(file).Replace(extension,""), TextWrapping = TextWrapping.Wrap,VerticalAlignment = VerticalAlignment.Center};
+                        TextBlock lbl = new() {Foreground = App.settings.appsDrawerTheme == "Dark" ? Brushes.White : Brushes.Black, TextAlignment = TextAlignment.Center,HorizontalAlignment = App.settings.appsDrawerItemStyle == "Grid" ? HorizontalAlignment.Center : HorizontalAlignment.Left, Text = Path.GetFileName(file).Replace(extension,""), TextWrapping = TextWrapping.Wrap,VerticalAlignment = VerticalAlignment.Center};
                         if (App.settings.appsDrawerItemStyle == "Grid") {
 
                         }else {

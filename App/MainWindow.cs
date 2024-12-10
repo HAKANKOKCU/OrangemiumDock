@@ -563,7 +563,6 @@ public partial class MainWindow : Window
         loadsettings();
         repos();
 
-        if (App.settings.automaticSeparatorAtRunningApps) rapsep = createseparator();
 
         DispatcherTimer AnimationTicker = new() {Interval = TimeSpan.FromMilliseconds(1)};
         DispatcherTimer dt = new() {Interval = TimeSpan.FromMilliseconds(App.settings.tickerInterval)};
@@ -930,6 +929,7 @@ public partial class MainWindow : Window
             if (s != null) {
                 App.styles = s;
             }
+            if (App.settings.automaticSeparatorAtRunningApps) rapsep = createseparator(); //so it reloads that separator
         }catch {
 
         }
@@ -1136,7 +1136,7 @@ public partial class MainWindow : Window
                     
                 }
                 //Console.WriteLine("Updating etc..");
-                if (appics.ContainsKey(window.Key)) {
+                if (appics.ContainsKey(window.Key) && prc != null) {
                     var l = appics[window.Key];
                     
                     foreach (object x in l) {
@@ -1361,7 +1361,6 @@ public partial class MainWindow : Window
         public HWND hd = 0;
         public HWND? lasticon = null;
         public int tickcnt = 0;
-        bool hovered = false;
         public void updatedata(string title, bool active = false) {
             btntip.Content = title;
             activ = active;
@@ -1452,13 +1451,13 @@ public partial class MainWindow : Window
             try{btn.Style = (Style)Application.Current.Resources[App.styles["dockButtonStyleToUse"].ToString()];}catch{}
             
             btn.MouseEnter += (e,a) => {
-                hovered = true;
+                //hovered = true;
                 if (App.styles.ContainsKey("dockButton:hover")) {
                     applyStyle(btn, (JObject)App.styles["dockButton:hover"]);
                 }
             };
             btn.MouseLeave += (e,a) => {
-                hovered = false;
+                //hovered = false;
                 //tickcnt = 0;
                 //spinnerpopup.IsOpen = false;
                 if (App.styles.ContainsKey("dockButton:unhover")) {
