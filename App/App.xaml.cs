@@ -378,6 +378,7 @@ public partial class App : Application
         public string appsDrawerItemStyle = "Grid";
         public int displayId = 0;
         public bool appsDrawerAsPopup = false;
+        public string searchEngineSyntax = "https://www.google.com/search?q=%SEARCHPARAMETER%";
     }
     public class iconDataType {
         public string name = "";

@@ -163,6 +163,12 @@ public partial class appsdrawerWindow : Window
             if (e.Key == Key.Enter) {
                 if (firstitem != null) {
                     firstitem.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                }else {
+                    Process.Start(new ProcessStartInfo() {
+                        FileName = App.settings.searchEngineSyntax.Replace("%SEARCHPARAMETER%",mtb.Text),
+                        UseShellExecute = true
+                    });
+                    Close();
                 }
             }
             /*if (e.Key == Key.F11) {
@@ -258,6 +264,7 @@ public partial class appsdrawerWindow : Window
         Dictionary<string,WrapPanel> wpas = new();
         Dictionary<string,StackPanel> sps = new();
         firstitem = null;
+        int itmcount = 0;
         foreach (string dir in dirs) {
             try {
                 string[] fils = Directory.GetFiles(dir);
@@ -339,11 +346,16 @@ public partial class appsdrawerWindow : Window
                         if (!wp.Children.Contains(sp)) {
                             wp.Children.Add(sp);
                         }
+                        itmcount++;
                     }
                 }
                 
             }catch (Exception e) {Console.WriteLine(e);}
         }
         //if (!iconloader.IsAlive) iconloader.Start();
+        if (itmcount == 0) {
+            Label lbl = new Label() {Content = "Web Search: " + filter, Foreground = App.settings.appsDrawerTheme == "Dark" ? Brushes.White : Brushes.Black};
+            wp.Children.Add(lbl);
+        }
     }
 }
