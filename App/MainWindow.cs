@@ -272,7 +272,6 @@ public partial class MainWindow : Window
     public StackPanel runningapps = new() { Orientation = Orientation.Horizontal};
     static double iconsize = 48;
     public Grid mtc = new();
-    Border appsmenu = new();
     
     public Border apsb = new() {Background = new SolidColorBrush(Color.FromArgb(150,0,0,0)),HorizontalAlignment = HorizontalAlignment.Center,ClipToBounds = true};
     static ContextMenu mainmenu = new();
@@ -576,7 +575,7 @@ public partial class MainWindow : Window
                 RECT aa;
                 GetWindowRect(new HandleRef(this, fgw), out aa);
                 foregroundrct = aa;
-                if (aa.Bottom >= SystemParameters.FullPrimaryScreenHeight && aa.Top == 0) {
+                if (aa.Bottom >= SystemParameters.FullPrimaryScreenHeight && aa.Top == 0 && aa.Left == 0 && aa.Right >= SystemParameters.FullPrimaryScreenWidth) {
                     Hide(); //hide in fullscreen apps/games.
                     if (blr != null) blr.Hide();
                     AnimationTicker.Stop();
